@@ -1,0 +1,82 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+ {{category.name}} Services
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="display-4">
+Services offered in <strong>{{category.name}}</strong> Service_Type
+</h2>
+
+<hr>
+<div class="container mt-1"></div>
+    <div class="heading text-center">
+        <h2 class="display-5">Click here to add more services </h2>
+    <a href="{{url_for('add_service', category_id=category.id)}}" class="btn btn-success">
+        <i class="fa5 fa-plus"></i>
+        Add Services
+    </a>
+</div>
+
+    
+
+<h5 class="display-5 text-center mt-5">List of Authorised Services</h5>
+<table class="table table-striped mt-3">
+    <thead>
+        <tr>
+            <th style="width: 10%">Service ID</th>
+            <th style="width: 15%" >Service Name</th>
+            <th style="width: 10%">Service Type</th>
+            <th style="width: 40%; text-align:center;">Description</th>
+            <th style="width: 10%">Price,(Base Price)</th>
+            <th style="width: 15%">Management Tools</th>
+            
+            
+        </tr>
+    </thead>
+    <tbody>
+       {% for service in category.services %}
+       <tr>
+            <td>{{service.id}}</td>
+            <td>{{service.name}}</td>
+            <td>{{service.type}}</td>
+            <td>{{service.description}}</td>
+            <td>{{service.price}}</td>
+            
+            <td>
+        
+            <a href="{{url_for('edit_service', id=service.id)}}" class="btn btn-primary">
+                <i class="fas fa-edit"></i>
+                Edit Service
+            </a>
+            <a href="{{url_for('delete_service', id=service.id)}}" class="btn btn-danger">
+                <i class="fas fa-trash-can"></i>
+                Delete Service
+            </a>
+        </td>
+        </tr>
+         {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block style %}
+<style>
+    .container {
+        max-width: 1500px;
+        margin-top: 50px;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .table {
+        margin-top: 30px;
+    }
+    .btn {
+        margin-top: 10px;
+    }
+</style>
+    
+{% endblock %}

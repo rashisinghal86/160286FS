@@ -1,0 +1,217 @@
+{% extends 'layout.html' %}
+{% block title %}
+Admin dashboard
+{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h1 class="display-4">Admin dashboard</h1>
+  <div class="profile-pic">
+    <img src="https://api.dicebear.com/9.x/bottts/svg?seed= Webmaster" width="100" alt="avatar">
+  </div>
+  <h3 class="text-muted">Welcome, Webmaster {{ admin.name }} </h3>
+    <hr>
+    <h4>What would you like to do?</h4>
+    <div class="row justify-content-center align-items-center">
+      <div class="col-md-2 mb-2">
+          <div class="card" style="width: 100%;">
+              <div class="card-body">
+                  <h5 class="card-title text-center">My Profile</h5>
+                  <a href="{{ url_for('profile') }}" class="btn btn-success ">
+                    <i class="fa-solid fa-id-card fa-4x"></i>
+                    <img src="https://api.dicebear.com/9.x/initials/svg?seed=Profile" class="card-img-top" alt="avatar">
+                    <p class="card-text">Click here to update your profile </p>
+
+                    </a>
+
+                  
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-2 mb-2">
+          <div class="card" style="width: 100%;">
+              <div class="card-body">
+                  <h5 class="card-title text-center">Service Management</h5>
+                  <a href="{{url_for('add_category')}}" class="btn btn-success">
+                    <i class="fa-brands fa-buffer fa-5x"></i>
+                    <!-- <i class="fa-sharp-duotone fa-solid fa-user-tie fa-5x"></i> -->
+                    <img src="https://api.dicebear.com/9.x/initials/svg?seed=Service Management" class="card-img-top" alt="avatar">
+                    <p class="card-text">Click here to add category of services and sub categories in each service</p>
+                  
+   </a>
+                 
+                  
+  </div>
+</div>
+</div>
+
+<div class="col-md-2 mb-2">
+  <div class="card" style="width: 100%;">
+      <div class="card-body">
+          <h5 class="card-title text-center">Professional Management</h5>
+          <a href="{{url_for('pending_professionals')}}" class="btn btn-success">
+
+          <i class="fa-sharp-duotone fa-solid fa-user-tie fa-5x"></i>
+          <img src="https://api.dicebear.com/9.x/initials/svg?seed=Professionals Management" class="card-img-top" alt="avatar">
+          <p class="card-text">Click here to verify new professionals and overview the professionals activities on the platform</p>
+          </a>
+          
+          
+</div>
+</div>
+</div>
+
+
+<div class="col-md-2 mb-2">
+  <div class="card" style="width: 100%;">
+      <div class="card-body">
+          <h5 class="card-title text-center"> Customer Management </h5>
+          <a href="{{url_for('manage_customers')}}" class="btn btn-success">
+            
+          <i class="fa-sharp-duotone fa-solid fa-users fa-5x"></i>
+            <img src="https://api.dicebear.com/9.x/initials/svg?seed= Client Management" class="card-img-top" alt="avatar">
+            <p class="card-text">Click here to monitor customers on the platform</p>
+
+        </a>
+          
+</div>
+</div>
+</div>
+
+    
+<div class="col-md-2 mb-2">
+  <div class="card" style="width: 100%;">
+      <div class="card-body">
+          <h5 class="card-title text-center"> Overview </h5>
+          <a href="{{url_for('admin_bookings')}}" class="btn btn-success">
+            <i class="fa-solid fa-file-invoice fa-5x "></i>
+
+            <img src="https://api.dicebear.com/9.x/initials/svg?seed= Overview" class="card-img-top" alt="avatar">
+            <p class="card-text">Click here to monitor all activities on the platform</p>
+             </a>
+
+          
+            </div>
+          </div>
+          </div>
+
+          
+<hr>
+<hr>
+
+<h2 class="display-4" style="text-align: center; font-weight: bold;">Graphical Overview:</h2>
+<div class="chart-container mt-4">
+<div class="row">
+<div class="col-md-4 mb-4">
+  <h3>Services Summary </h3>
+  <canvas id="myChart1" width="600" height="600"></canvas>
+</div>
+
+<div class="col-md-4 mb-4">
+  <h3>Professional Status Summary</h3>
+  <canvas id="myChart2" width="600" height="600"></canvas>
+</div>
+<div class="col-md-4 mb-4">
+  <h3>Client Status Summary </h3>
+  <canvas id="myChart3" width="600" height="600"></canvas>
+</div>
+</div>
+
+{% endblock %}
+
+
+
+
+{% block script %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  const ctx1 = document.getElementById('myChart1');
+
+  new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: {{ category_names|tojson }},
+      datasets: [{
+        label: 'No. of services in each category',
+        data: {{ category_sizes|tojson }},
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+
+  const ctx2 = document.getElementById('myChart2');
+  new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: ['Pending', 'Blocked', 'Approved'],
+      datasets: [{
+        label: 'No.of professionals',
+        data: {{ [pending_professionals[0], blocked_professionals[0], approved_professionals[0]]|tojson }},
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+
+  const ctx3 = document.getElementById('myChart3');
+  new Chart(ctx3, {
+    type: 'bar',
+    data: {
+      labels: ['Blocked', 'Unblocked'],
+      datasets: [{
+        label: 'No. of customers',
+        data: {{ [blocked_customers[0], unblocked_customers[0]]|tojson }},
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+</script>
+{% endblock %}
+
+{% block style %}
+<style>
+  .chart-container {
+    
+    display: grid;
+    justify-content:space-evenly;
+    margin: 20px;
+    
+
+  }
+  .btn {
+    margin-top: 20px;
+}
+
+    .display-4{
+        text-size-adjust: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+    }
+.profile-pic{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+</style>
+{% endblock %}
+
+
+
+  
