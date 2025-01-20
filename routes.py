@@ -1,5 +1,5 @@
 from app import app
-from flask import render_template, request, flash, redirect, url_for, session
+from flask import jsonify, render_template, request, flash, redirect, url_for, session
 from models import db, User, Role,Admin, Professional, Customer, Category, Service, Schedule, Transaction, Booking
 
 from flask_security import login_required, roles_required, current_user, login_user
@@ -72,9 +72,55 @@ def allowed_file(filename):
 def index(): 
     return 'hello you are on the app platfrom of housekeeping services'
 
-@app.route('/home')
-def home():
-   return render_template('custom_login.html')
+# @app.route('/home')
+# def home():
+#    return render_template('custom_login.html')
+
+@app.route('/protected')
+@login_required
+def protected():
+    return 'protected'
+
+
+from flask import render_template, request, redirect, url_for, flash
+from flask_security.utils import verify_and_update_password, login_user
+from models import User
+
+# @app.route('/login', methods=['GET', 'POST'])
+# def custom_login():
+#     return "Login Page"  # Temporary response working 21/01/25
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        # Render the login page
+        if current_user.is_authenticated:
+            flash("You are already logged in.", "info")
+            return redirect(url_for('home.html'))  # Replace 'home' with your default logged-in route
+        return render_template('login.html')  # Replace 'login.html' with your template
+
+    elif request.method == 'POST':
+        # Handle login form submission
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        # Validate the form data
+        if not email or not password:
+            flash("Please provide both email and password.", "danger")
+            return redirect(url_for('login'))
+
+        # Fetch the user from the database
+        user = User.query.filter_by(email=email).first()
+        if user and check_password_hash(user.password, password):
+            # Log the user in
+            login_user(user)
+            flash("Login successful!", "success")
+            return '  # Replace dashboard with your destination route'
+        else:
+            flash("Invalid email or password.", "danger")
+            return redirect(url_for('login'))
+
 
 
 @app.route('/debug_admin', methods=['GET'])
@@ -198,21 +244,6 @@ def test_login():
 # def login():
 #     return render_template('login.html')
 
-@app.route('/login', methods=['GET', 'POST'])
-def custom_login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        user = User.query.filter_by(email=email).first()
-
-        if user and user.verify_password(password):  # Replace with your password-checking logic
-            login_user(user)
-            flash('Welcome back!', 'success')
-            return 'working1'
-        else:
-            flash('Invalid email or password.', 'danger')
-
-    return render_template('custom_login.html') 
 
     # user = User.query.filter_by(username=username).first()
 #     if not username or not password:

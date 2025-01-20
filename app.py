@@ -12,7 +12,7 @@ db.init_app(app)
 
 # Setup Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-security = Security(app, user_datastore)
+security = Security(app, user_datastore, register_blueprint=False)
 
 # Create the database tables and default data
 with app.app_context():
