@@ -48,40 +48,80 @@ def protected():
 # def custom_login():
 #     return "Login Page"  # Temporary response working 21/01/25
 
-@app.route('/login', methods=['GET'])
-def login_form():
-    return render_template('login.html')  # Create a login.html in your templates folder
+# @app.route('/login', methods=['GET'])
+# def login_form():
+#     return render_template('login.html')  # Create a login.html in your templates folder
+# @app.route('/api/login', methods=['GET'])
+# def login_form():
+#     """API endpoint to provide context or status for login."""
+#     return jsonify({
+#         "message": "Login endpoint is available. Submit credentials via POST request.",
+#         "status": "ready"
+#     }), 200
 
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if request.method == 'GET':
+#         # Render the login page
+#         if current_user.is_authenticated:
+#             flash("You are already logged in.", "info")
+#             return redirect(url_for('home.html'))  # Replace 'home' with your default logged-in route
+#         return render_template('login.html')  # Replace 'login.html' with your template
 
-@app.route('/login', methods=['GET', 'POST'])
+#     elif request.method == 'POST':
+#         # Handle login form submission
+#         email = request.form.get('email')
+#         password = request.form.get('password')
+
+#         # Validate the form data
+#         if not email or not password:
+#             flash("Please provide both email and password.", "danger")
+#             return redirect(url_for('login'))
+
+#         # Fetch the user from the database
+#         user = User.query.filter_by(email=email).first()
+#         if user and check_password_hash(user.password, password):
+#             # Log the user in
+#             login_user(user)
+#             flash("Login successful!", "success")
+#             return '  # Replace dashboard with your destination route'
+#         else:
+#             flash("Invalid email or password.", "danger")
+#             return redirect(url_for('login'))
+ 
+@app.route('/api/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
-        # Render the login page
+        # Respond with JSON if already authenticated
         if current_user.is_authenticated:
-            flash("You are already logged in.", "info")
-            return redirect(url_for('home.html'))  # Replace 'home' with your default logged-in route
-        return render_template('login.html')  # Replace 'login.html' with your template
+            return jsonify({"message": "You are already logged in."}), 200
+        return jsonify({"message": "Please log in to continue."}), 200
 
     elif request.method == 'POST':
-        # Handle login form submission
-        email = request.form.get('email')
-        password = request.form.get('password')
+        # Extract email and password from the request
+        data = request.get_json()  # Expecting JSON input in POST
+        email = data.get('email')
+        password = data.get('password')
 
-        # Validate the form data
+        # Validate the input
         if not email or not password:
-            flash("Please provide both email and password.", "danger")
-            return redirect(url_for('login'))
+            return jsonify({"error": "Email and password are required."}), 400
 
         # Fetch the user from the database
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password, password):
             # Log the user in
             login_user(user)
-            flash("Login successful!", "success")
-            return '  # Replace dashboard with your destination route'
+            return jsonify({
+                "message": "Login successful!",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email
+                }
+            }), 200
         else:
-            flash("Invalid email or password.", "danger")
-            return redirect(url_for('login'))
+            return jsonify({"error": "Invalid email or password."}), 401
 
 
 

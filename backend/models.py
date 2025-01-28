@@ -139,7 +139,18 @@ def create_default_admin():
             db.session.add(admin)
             db.session.commit()
             print("Admin user created successfully.")
-            
+            admin_entry = Admin(
+                name='Administrator',
+                user_id=admin.id
+            )
+            db.session.add(admin_entry)
+            db.session.commit()
+
+            print("Admin user and Admin entry created successfully.")
+        else:
+            print("Admin user already exists.")
+    else:
+        print("Admin role does not exist.")
 
 # Ensure the database is initialized and roles/admin are added
 # with app.app_context():
