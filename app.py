@@ -1,11 +1,13 @@
 from flask import Flask
 from flask_security import Security, SQLAlchemyUserDatastore
 from extensions import db
-from models import User, Role, add_roles, create_default_admin
+from backend.models import User, Role, add_roles, create_default_admin
 
 # Initialize the Flask application
 app = Flask(__name__)
-app.config.from_object('config.Config')
+#app.config.from_object('config.Config')
+app.config.from_object('backend.config.Config')
+
 
 # Initialize the database
 db.init_app(app)
@@ -20,8 +22,8 @@ with app.app_context():
     add_roles()      # Add default roles
     create_default_admin()  # Create a default admin user
 
-# Import routes after app setup
-import routes
+# Import backend.routes after app setup
+import backend.routes
 
 if __name__ == '__main__':
     app.run(debug=True)
