@@ -125,55 +125,128 @@ def login():
 
 
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'GET':
-        # Render the registration page
-        if current_user.is_authenticated:
-            flash("You are already registered and logged in.", "info")
-            return  ' # Replace dashboard with your desired route'
-        return render_template('register.html')
+# @app.route('/register', methods=['GET', 'POST'])
+# def register():
+#     if request.method == 'GET':
+#         # Render the registration page
+#         if current_user.is_authenticated:
+#             flash("You are already registered and logged in.", "info")
+#             return  ' # Replace dashboard with your desired route'
+#         return render_template('register.html')
 
-    elif request.method == 'POST':
-        # Handle registration form submission
-        email = request.form.get('email')
-        username = request.form.get('username')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        role_name = request.form.get('role')  # Optional: if assigning roles
+#     elif request.method == 'POST':
+#         # Handle registration form submission
+#         email = request.form.get('email')
+#         username = request.form.get('username')
+#         password = request.form.get('password')
+#         confirm_password = request.form.get('confirm_password')
+#         role_name = request.form.get('role')  # Optional: if assigning roles
 
-        # Validate the form data
-        if not email or not username or not password or not confirm_password:
-            flash("All fields are required.", "danger")
-            return render_template('register.html')
+#         # Validate the form data
+#         if not email or not username or not password or not confirm_password:
+#             flash("All fields are required.", "danger")
+#             return render_template('register.html')
 
-        if password != confirm_password:
-            flash("Passwords do not match.", "danger")
-            return render_template ('register.html')
+#         if password != confirm_password:
+#             flash("Passwords do not match.", "danger")
+#             return render_template ('register.html')
 
-        # Check if the email is already registered
-        if User.query.filter_by(email=email).first():
-            flash("Email already registered. Please log in.", "danger")
-            return render_template ('register.html')
+#         # Check if the email is already registered
+#         if User.query.filter_by(email=email).first():
+#             flash("Email already registered. Please log in.", "danger")
+#             return render_template ('register.html')
 
         
-        # Hash the password and create a new user
-        password_hash = generate_password_hash(password)
-        user = User(email=email, username=username, password=password_hash, active=True)
+#         # Hash the password and create a new user
+#         password_hash = generate_password_hash(password)
+#         user = User(email=email, username=username, password=password_hash, active=True)
 
-        # Assign a role to the user if roles exist
-        if role_name:
-            role = Role.query.filter_by(name=role_name).first()
-            if role:
-                user.roles.append(role)
+#         # Assign a role to the user if roles exist
+#         if role_name:
+#             role = Role.query.filter_by(name=role_name).first()
+#             if role:
+#                 user.roles.append(role)
 
-        # Add and commit the new user to the database
-        db.session.add(user)
+#         # Add and commit the new user to the database
+#         db.session.add(user)
+#         db.session.commit()
+
+#         flash("Registration successful! Please log in.", "success")
+#         return render_template('login.html')
+
+
+
+@app.route('/api/register', methods=['POST'])
+def register():
+    # Get JSON data from request
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    # Extract fields from the JSON data
+    email = data.get('email')
+    username = data.get('username')
+    password = data.get('password')
+    confirm_password = data.get('confirm_password')
+    role_name = data.get('role')  # Optional: if assigning roles
+
+    # Validate the form data
+    if not email or not username or not password or not confirm_password:
+        return jsonify({"error": "All fields are required."}), 400
+
+    if password != confirm_password:
+        return jsonify({"error": "Passwords do not match."}), 400
+
+    # Check if the email is already registered
+    if User.query.filter_by(email=email).first():
+        return jsonify({"error": "Email already registered. Please log in."}), 400
+
+    # Hash the password and create a new user
+    password_hash = generate_password_hash(password)
+    user = User(email=email, username=username, password=password_hash, active=True)
+
+    # Assign a role to the user if roles exist
+    if role_name:
+        role = Role.query.filter_by(name=role_name).first()
+        if role:
+            user.roles.append(role)
+
+    # Add and commit the new user to the database
+    db.session.add(user)
+    db.session.commit()
+
+    # If the user is assigned the 'Customer' role, create a corresponding entry in the Customer table
+    if role_name == 'Customer':
+        # You can add logic to get contact information from the request
+        customer = Customer(
+            user_id=user.id,
+            name=username,
+            email=email,
+            contact= 'N/A',  # You can add logic to get contact information from the request
+            location= 'N/A'  # You can add logic to get location from the request
+        )
+        db.session.add(customer)
         db.session.commit()
+    elif role_name == 'Professional':
+        professional = Professional(
+            user_id=user.id,
+            email=email,
+            name=username,
+            contact='N/A',  # You can add logic to get contact information from the request
+            service_type='N/A',  # You can add logic to get service type from the request
+            experience='N/A',  # You can add logic to get experience from the request
+            location='N/A',  # You can add logic to get location from the request
+            filename='N/A',  # You can add logic to get filename from the request
+            is_verified=False,
+            is_flagged=False
+        )
+        db.session.add(professional)
+        db.session.commit()
+        
 
-        flash("Registration successful! Please log in.", "success")
-        return render_template('login.html')
 
+    return jsonify({"message": "Registration successful! Please log in."}), 201
 
 @app.route('/debug_admin', methods=['GET'])
 def debug_admin():

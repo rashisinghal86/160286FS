@@ -124,8 +124,11 @@ def add_roles():
 
 def create_default_admin():
     admin_role = Role.query.filter_by(name='Admin').first()
+    
     if admin_role:
-        if not User.query.filter_by(email='admin@example.com').first():
+        existing_admin = User.query.filter_by(email='admin@example.com').first()
+        
+        if not existing_admin:
             password_hash = generate_password_hash('admin123!@#')
             admin = User(
                 email='admin@example.com',
@@ -133,16 +136,14 @@ def create_default_admin():
                 password=password_hash,
                 active=True,
                 confirmed_at=datetime.utcnow(),
-                role_id=admin_role.id, #
+                role_id=admin_role.id,  
                 roles=[admin_role]
             )
             db.session.add(admin)
             db.session.commit()
-            print("Admin user created successfully.")
-            admin_entry = Admin(
-                name='Administrator',
-                user_id=admin.id
-            )
+
+            # ✅ Ensure the Admin entry is created
+            admin_entry = Admin(name='Admin', user_id=admin.id)
             db.session.add(admin_entry)
             db.session.commit()
 
@@ -151,6 +152,7 @@ def create_default_admin():
             print("Admin user already exists.")
     else:
         print("Admin role does not exist.")
+
 
 # Ensure the database is initialized and roles/admin are added
 # with app.app_context():
