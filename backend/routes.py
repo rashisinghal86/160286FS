@@ -2,7 +2,7 @@ from app import app
 from flask import jsonify, render_template, request, flash, redirect, url_for, session
 from backend.models import db, User, Role,Admin, Professional, Customer, Category, Service, Schedule, Transaction, Booking
 
-from flask_security import login_required, roles_required, current_user, login_user
+from flask_security import login_required, roles_required, current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
@@ -32,7 +32,7 @@ def get_users():
 
 @app.route('/')
 def index(): 
-    return 'hello you are on the app platfrom of housekeeping services'
+    return render_template('index.html')
 
 # @app.route('/home')
 # def home():
@@ -327,9 +327,53 @@ def debug_roles():
 #         customer = Customer.query.filter_by(user_id=user.id).first()
 #         if customer:
 #             return redirect(url_for('cust_db', username=customer.users.username))
-    
-    
-   
+
+@app.route('/api/home', methods=['GET'])
+@login_required  # This will ensure the user is logged in before accessing this route
+def home():
+    # Check if the user is authenticated
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'User not authenticated'}), 401
+
+    # Get the user and role information
+    user = User.query.get(current_user.id)
+    role = Role.query.get(user.role_id)
+
+    # Prepare the response based on the role of the user
+    if role.name == 'Admin':
+        admin = Admin.query.filter_by(user_id=user.id).first()
+        if admin:
+            return jsonify({
+                'message': 'Admin dashboard',
+                'admin_username': admin.user.username,
+                'role': role.name
+            }), 200
+        else:
+            return jsonify({'error': 'Admin not found'}), 404
+
+    elif role.name == 'Professional':
+        professional = Professional.query.filter_by(user_id=user.id).first()
+        if professional:
+            return jsonify({
+                'message': 'Professional dashboard',
+                'professional_username': professional.users.username,
+                'role': role.name
+            }), 200
+        else:
+            return jsonify({'error': 'Professional not found'}), 404
+
+    elif role.name == 'Customer':
+        customer = Customer.query.filter_by(user_id=user.id).first()
+        if customer:
+            return jsonify({
+                'message': 'Customer dashboard',
+                'customer_username': customer.users.username,
+                'role': role.name
+            }), 200
+        else:
+            return jsonify({'error': 'Customer not found'}), 404
+
+    return jsonify({'error': 'Role not recognized'}), 400
 
 
 # #--1. registering a user-----------------------------------
@@ -545,6 +589,70 @@ def debug_roles():
 #         professional = Professional.query.filter_by(user_id=user.id).first()
 #         return render_template('verify_prof.html',professional=professional)
 
+@app.route('/api/register_professional', methods=['POST'])
+def register_professional():
+    if 'user_id' not in session:
+        return jsonify({'error': 'User not logged in'}), 401  # Unauthorized
+
+    user = User.query.get(session['user_id'])  # Get logged-in user
+    # Continue with registration logic...
+    """API to register a professional."""
+    data = request.get_json()  # Get JSON data from request body
+    
+    if not data:
+        return jsonify({"error": "Invalid request, JSON data required"}), 400
+
+    email = data.get('email')
+    name = data.get('name')
+    contact = data.get('contact')
+    service_type = data.get('service_type')
+    experience = data.get('experience')
+    location = data.get('location')
+    
+    if not email or not name or not contact or not service_type or not experience:
+        return jsonify({"error": "Please enter all required fields"}), 400
+
+    user = User.query.get(session['user_id'])  # Get logged-in user
+
+    # Check if the professional is already registered
+    existing_professional = Professional.query.filter_by(user_id=user.id).first()
+    if existing_professional:
+        return jsonify({"message": "Already registered", "redirect": "/api/professional_dashboard"}), 200
+
+    # Create new professional entry
+    new_professional = Professional(
+        user_id=user.id,
+        email=email,
+        name=name,
+        contact=contact,
+        service_type=service_type,
+        experience=experience,
+        location=location
+    )
+    
+    db.session.add(new_professional)
+    db.session.commit()
+
+    return jsonify({"message": "Professional registered successfully", "redirect": "/api/professional_dashboard"}), 201
+
+
+@app.route('/api/upload_professional_file', methods=['POST'])
+def upload_professional_file():
+    """API for handling professional document uploads."""
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        return jsonify({"message": "File uploaded successfully", "filename": filename}), 200
+    
+    return jsonify({"error": "Invalid file type"}), 400
 
 
 # @app.route('/admin/professionals')
@@ -560,32 +668,65 @@ def debug_roles():
 #         professionals = Professional.query.filter(Professional.name.ilike(f'%{pname}%')).all()
 #     return render_template('professionals.html', professionals=professionals, pname=pname, pservice_type=pservice_type, plocation=plocation)
 
+@app.route('/api/admin/professionals', methods=['GET'])
+# @roles_required('admin')  # If you want to enforce admin role, you can use this
+def professionals():
+    pname = request.args.get('pname') or ''
+    pservice_type = request.args.get('pservice_type') or ''
+    plocation = request.args.get('plocation') or ''
 
-# @app.route('/admin/pending_professionals')
+    # Fetch professionals with the given filters
+    query = Professional.query
+
+    if pname:
+        query = query.filter(Professional.name.ilike(f'%{pname}%'))
+    if pservice_type:
+        query = query.filter(Professional.service_type.ilike(f'%{pservice_type}%'))
+    if plocation:
+        query = query.filter(Professional.location.ilike(f'%{plocation}%'))
+
+    professionals = query.all()
+
+    # Prepare the list of professionals to send as response
+    professionals_list = [{
+        'id': professional.id,
+        'name': professional.name,
+        'service_type': professional.service_type,
+        'location': professional.location
+    } for professional in professionals]
+
+    return jsonify({
+        'professionals': professionals_list,
+        'filters': {
+            'pname': pname,
+            'pservice_type': pservice_type,
+            'plocation': plocation
+        }
+    }), 200
+
+@app.route('/api/admin/pending_professionals', methods=['GET'])
 # @roles_required('admin')
-# def pending_professionals():
-#     pending_professionals = Professional.query.filter_by(is_verified=False,is_flagged=False).all()
-#     approved_professionals = Professional.query.filter_by(is_verified=True).all()
-#     blocked_professionals = Professional.query.filter_by(is_flagged=True).all()
+@login_required
+def pending_professionals():
+    if current_user.role_id != 1:
+        return jsonify({"message": "Forbidden, you must be an admin."}), 403
+ 
+    # Fetch professionals based on verification status and flagging
+    pending_professionals = Professional.query.filter_by(is_verified=False, is_flagged=False).all()
+    approved_professionals = Professional.query.filter_by(is_verified=True).all()
+    blocked_professionals = Professional.query.filter_by(is_flagged=True).all()
 
-#     #search professionals for search on basis of name, service_type, location, experience
-#     # professionals=Professional.query.all()
-#     # pname = request.args.get('pname') or ''
-#     # pservice_type = request.args.get('pservice_type') or ''
-#     # plocation = request.args.get('plocation') or ''
-#     # print(pname, pservice_type, plocation)
+    # Prepare data to return
+    pending_list = [{'id': prof.id, 'name': prof.name, 'service_type': prof.service_type, 'location': prof.location, 'experience': prof.experience} for prof in pending_professionals]
+    approved_list = [{'id': prof.id, 'name': prof.name, 'service_type': prof.service_type, 'location': prof.location, 'experience': prof.experience} for prof in approved_professionals]
+    blocked_list = [{'id': prof.id, 'name': prof.name, 'service_type': prof.service_type, 'location': prof.location, 'experience': prof.experience} for prof in blocked_professionals]
 
-#     # # search_professionals = []
-
-#     # if pname:
-#     #     professionals = Professional.query.filter(Professional.name.ilike(f'%{pname}%')).all()
-#     # # if pservice_type:
-#     #     professionals = Professional.query.filter(Professional.service_type.ilike(f'%{pservice_type}%')).all()
-#     # if plocation:
-#     #     professionals = Professional.query.filter(Professional.location.ilike(f'%{plocation}%')).all()  
-#     return render_template('pending_professionals.html', pending_professionals=pending_professionals,approved_professionals=approved_professionals, blocked_professionals=blocked_professionals)
-        
-#     #return render_template('pending_professionals.html', pending_professionals=pending_professionals,approved_professionals=approved_professionals, blocked_professionals=blocked_professionals)
+    # Return the data as JSON
+    return jsonify({
+        'pending_professionals': pending_list,
+        'approved_professionals': approved_list,
+        'blocked_professionals': blocked_list
+    }), 200
 
 # # Admin route to approve professional
 # @app.route('/admin/approve_professional/<int:id>', methods=['POST'])
@@ -598,6 +739,21 @@ def debug_roles():
 #         db.session.commit()
 #         flash(f'Professional {professional.name} approved successfully')
 #     return redirect(url_for('pending_professionals'))
+@app.route('/api/admin/approve_professional/<int:id>', methods=['POST'])
+@roles_required('admin')
+def approve_professional(id):
+    professional = Professional.query.get(id)
+    if professional:
+        professional.is_verified = True
+        # professional.is_flagged = True (if needed, you can include this logic)
+        db.session.commit()
+        return jsonify({
+            'message': f'Professional {professional.name} approved successfully',
+            'professional_id': professional.id,
+            'is_verified': professional.is_verified
+        }), 200
+    else:
+        return jsonify({'error': 'Professional not found'}), 404
 
 # # Admin route to block professional
 # @app.route('/admin/block_professional/<int:id>', methods=['POST'])
@@ -612,6 +768,32 @@ def debug_roles():
 #         flash(f'Professional {professional.name} blocked successfully')
 #     return redirect(url_for('pending_professionals'))
 
+@app.route('/api/admin/block_professional/<int:id>', methods=['POST'])
+# @roles_required('admin')  # Can be handled through Flask-Security or other role-based checks
+def block_professional(id):
+    # Check if the current user is an admin
+    if not current_user.is_authenticated or current_user.role.name != 'Admin':
+        return jsonify({'error': 'Unauthorized access. Admins only.'}), 403
+
+    # Fetch the professional by ID
+    professional = Professional.query.get(id)
+    if professional:
+        # Block the professional by updating their flags
+        professional.is_flagged = True
+        professional.is_verified = False
+        db.session.commit()
+
+        # Return success response
+        return jsonify({
+            'message': f'Professional {professional.name} blocked successfully',
+            'professional_id': professional.id,
+            'is_flagged': professional.is_flagged,
+            'is_verified': professional.is_verified
+        }), 200
+
+    return jsonify({'error': 'Professional not found'}), 404
+
+
 # # Admin route to unblock professional
 # @app.route('/admin/unblock_professional/<int:id>', methods=['POST'])
 # @roles_required('admin')
@@ -622,6 +804,24 @@ def debug_roles():
 #         db.session.commit()
 #         flash(f'Professional {professional.name} unblocked successfully')
 #     return redirect(url_for('pending_professionals'))
+
+@app.route('/api/admin/unblock_professional/<int:id>', methods=['POST'])
+@roles_required('admin')  # Ensure only admins can access this route
+def unblock_professional(id):
+    professional = Professional.query.get(id)
+    if professional:
+        # Unblock the professional
+        professional.is_flagged = False
+        db.session.commit()
+        return jsonify({
+            'message': f'Professional {professional.name} unblocked successfully',
+            'professional_id': professional.id,
+            'status': 'unblocked'
+        }), 200
+    else:
+        return jsonify({
+            'error': 'Professional not found'
+        }), 404
 
 # #  professional dashboard link to show all the appointments- accept/ reject
     
@@ -663,6 +863,50 @@ def debug_roles():
 #     #Check if customer-specific details are already provided\    
 #     flash('Customer registered successfully')
 #     return redirect(url_for('cust_db'))
+@app.route('/api/register_cdb', methods=['GET'])
+def register_cdb():
+    """Fetch current registration details, if applicable."""
+    # If you need any specific data to be sent with the GET request, you can return here
+    return jsonify({'message': 'Register your customer details using POST'}), 200
+
+
+@app.route('/api/register_cdb', methods=['POST'])
+def register_cdb_post():
+    """Register a new customer."""
+    user = User.query.get(current_user.id)
+    
+    # Check if the user has already registered as a customer
+    customer = Customer.query.filter_by(user_id=user.id).first()
+    if customer:
+        return jsonify({
+            'message': 'Already registered as a customer',
+            'customer_name': customer.name,
+            'redirect_to': f"/api/cust_db/{customer.id}"
+        }), 400  # Bad Request, since they already exist
+
+    # Extracting data from the request body
+    data = request.get_json()
+
+    email = data.get('email')
+    name = data.get('name')
+    contact = data.get('contact')
+    location = data.get('location')
+    password = data.get('password')
+
+    if not email or not name or not contact or not location or not password:
+        return jsonify({'error': 'Please enter all the fields'}), 400
+
+    # Register the new customer
+    new_customer = Customer(user_id=user.id, email=email, name=name, contact=contact, location=location)
+    db.session.add(new_customer)
+    db.session.commit()
+
+    # Success response
+    return jsonify({
+        'message': 'Customer registered successfully',
+        'customer_name': new_customer.name,
+        'customer_email': new_customer.email
+    }), 201  # HTTP status code for Created
 
 # #Admin route to search customers and blocked/unblocked.
 # @app.route('/admin/customers')
@@ -676,15 +920,52 @@ def debug_roles():
 #     if cname:
 #         customers = Customer.query.filter(Customer.name.ilike(f'%{cname}%')).all()
 #     return render_template('customers.html', customers=customers, cname=cname, clocation=clocation)
+@app.route('/api/admin/customers', methods=['GET'])
+def get_customers():
+    # Ensure the user is authenticated and has the proper role (Admin)
+    if not current_user.is_authenticated or current_user.role.name != 'Admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    # Get the query parameters for filtering customers
+    cname = request.args.get('cname', '')  # Default to empty string if not provided
+    clocation = request.args.get('clocation', '')  # Default to empty string if not provided
+
+    # Fetch the customers based on filtering criteria
+    customers = Customer.query.all()
+    
+    # Filter based on customer name and location if provided
+    if cname:
+        customers = Customer.query.filter(Customer.name.ilike(f'%{cname}%')).all()
+    if clocation:
+        customers = [customer for customer in customers if customer.location and clocation.lower() in customer.location.lower()]
+
+    # Prepare the response data
+    customer_list = [{
+        'id': customer.id,
+        'name': customer.name,
+        'location': customer.location
+    } for customer in customers]
+
+    return jsonify(customer_list), 200
 
 # #admin route to manage customers
-# @app.route('/admin/manage_customers')
-# @roles_required('admin') 
-# def manage_customers():   
-#     unblocked_customers = Customer.query.filter_by(is_blocked=False).all()
-#     blocked_customers = Customer.query.filter_by(is_blocked=True).all()
+# @app.route('/api/admin/manage_customers', methods=['GET'])
+# @roles_required('admin')  # Uncomment if you have role-based access control
+def manage_customers():
+    """Fetch all customers categorized by blocked status."""
+    unblocked_customers = Customer.query.filter_by(is_blocked=False).all()
+    blocked_customers = Customer.query.filter_by(is_blocked=True).all()
 
-#     return render_template('manage_customers.html',unblocked_customers=unblocked_customers, blocked_customers=blocked_customers)
+    response = {
+        "unblocked_customers": [
+            {"id": c.id, "name": c.users.username, "email": c.users.email} for c in unblocked_customers
+        ],
+        "blocked_customers": [
+            {"id": c.id, "name": c.users.username, "email": c.users.email} for c in blocked_customers
+        ],
+    }
+
+    return jsonify(response), 200
 
 # # Admin route to unblock customer
 # @app.route('/admin/unblock_customer/<int:id>', methods=['POST'])
@@ -696,6 +977,19 @@ def debug_roles():
 #         db.session.commit()
 #         flash(f'Customer {customer.name} unblocked successfully')
 #     return redirect(url_for('manage_customers'))  
+@app.route('/api/admin/unblock_customer/<int:id>', methods=['POST'])
+# @roles_required('admin')  # Uncomment this if role-based access is needed
+def api_unblock_customer(id):
+    customer = Customer.query.get(id)
+    
+    if not customer:
+        return jsonify({'error': 'Customer not found'}), 404
+    
+    customer.is_blocked = False
+    db.session.commit()
+    
+    return jsonify({'message': f'Customer {customer.name} unblocked successfully'}), 200
+
 
 # # Admin route to block customer
 # @app.route('/admin/block_customer/<int:id>', methods=['POST'])
@@ -708,6 +1002,19 @@ def debug_roles():
 #         db.session.commit()
 #         flash(f'Customer {customer.name} blocked successfully')
 #     return redirect(url_for('manage_customers'))
+@app.route('/api/admin/block_customer/<int:id>', methods=['POST'])
+# @roles_required('admin')  # Uncomment when role-based access control is handled
+def block_customer(id):   
+    customer = Customer.query.get(id)
+    
+    if not customer:
+        return jsonify({"error": "Customer not found"}), 404
+
+    customer.is_blocked = True
+    db.session.commit()
+    
+    return jsonify({"message": f"Customer {customer.name} blocked successfully"}), 200
+
 # # ------------------------------------------------------------------------#  
 
 # @app.route('/prof_db')
@@ -739,6 +1046,39 @@ def debug_roles():
     
 #     return redirect(url_for('prof_db',booking=booking,pending_booking=pending_booking))
 
+@app.route('/api/prof_db', methods=['GET'])
+def get_prof_dashboard():
+    """Fetch professional dashboard details"""
+    prof_name = request.args.get('username') or ''
+
+    return jsonify({"prof_name": prof_name}), 200
+
+
+@app.route('/api/prof_db/<int:id>', methods=['POST'])
+def accept_booking(id):
+    """Accept a pending booking"""
+    booking = Booking.query.get(id)
+    
+    if not booking:
+        return jsonify({"message": "Booking does not exist"}), 404
+
+    if not booking.is_pending:
+        return jsonify({"message": "Booking is not pending"}), 400
+
+    # Update booking status
+    booking.is_pending = False
+    booking.is_accepted = True
+
+    professional = Professional.query.filter_by(user_id=session.get('user_id')).first()
+    
+    if not professional:
+        return jsonify({"message": "Professional not found"}), 403
+
+    booking.professional_id = professional.id
+
+    db.session.commit()
+
+    return jsonify({"message": "Booking accepted successfully", "booking_id": booking.id}), 200
 
 # #-----3. signout-------------------------
 # @app.route('/signout')
@@ -746,6 +1086,13 @@ def debug_roles():
 # def signout():
 #     session.pop('user_id')
 #     return render_template('home.html')
+@app.route('/api/signout', methods=['POST'])
+def signout():
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'User not logged in'}), 401
+
+    logout_user()
+    return jsonify({'message': 'Successfully signed out'}), 200
 
 # @app.route('/delete/prof')
 # @login_required
@@ -763,6 +1110,22 @@ def debug_roles():
 #         print("User not found.")
 
 #     return render_template('homecss.html')
+@app.route('/api/delete/prof', methods=['DELETE'])
+@login_required
+def delete_prof():
+    user = User.query.get(session.get('user_id'))
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    professional = Professional.query.filter_by(user_id=user.id).first()
+    if professional:
+        db.session.delete(professional)
+
+    db.session.delete(user)
+    db.session.commit()
+
+    return jsonify({"message": "User and professional profile deleted successfully"}), 200
 
 # @app.route('/delete/cust')
 # @login_required
@@ -781,18 +1144,65 @@ def debug_roles():
 
 #     return render_template('homecss.html')
 
+@app.route('/api/delete/cust', methods=['DELETE'])
+@login_required
+def delete_cust():
+    """Delete the currently authenticated customer account."""
+    user = User.query.get(session.get('user_id'))  # Ensure session has user_id
+
+    if not user:
+        return jsonify({'message': 'User not found', 'status': 'error'}), 404
+
+    customer = Customer.query.filter_by(user_id=user.id).first()
+
+    try:
+        if customer:
+            db.session.delete(customer)  # Delete customer record
+        
+        db.session.delete(user)  # Delete user record
+        db.session.commit()
+        
+        return jsonify({'message': 'Account deleted successfully', 'status': 'success'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Failed to delete account', 'error': str(e)}), 500
 
 
-# @app.route('/delete/user/')
-# @roles_required('admin')
-# def delete_user():
-#     user = User.query.all()
-#     professional = Professional.query.all()
-#     customer = Customer.query.all()
-#     if not user:
-#         flash('User does not exist')
-#         return redirect(url_for('admin_db'))
-#     return render_template('delete_user.html',user=user, professional=professional, customer=customer)
+#@app.route('/api/users', methods=['GET'])
+@roles_required('admin')
+def get_users():
+    """Retrieve all users, professionals, and customers."""
+    users = User.query.all()
+    professionals = Professional.query.all()
+    customers = Customer.query.all()
+
+    if not users:
+        return jsonify({"message": "No users found"}), 404
+
+    users_data = [
+        {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": Role.query.get(user.role_id).name if user.role_id else None
+        }
+        for user in users
+    ]
+
+    professionals_data = [
+        {"id": p.id, "name": p.name, "email": p.users.email} for p in professionals
+    ]
+
+    customers_data = [
+        {"id": c.id, "name": c.name, "email": c.users.email} for c in customers
+    ]
+
+    return jsonify({
+        "users": users_data,
+        "professionals": professionals_data,
+        "customers": customers_data
+    }), 200
 
 # @app.route('/delete/user/post', methods=['POST'])
 # @roles_required('admin')
@@ -814,6 +1224,33 @@ def debug_roles():
 #     flash('User deleted successfully')
 #     return redirect(url_for('delete_user'))
 
+@app.route('/api/delete/user', methods=['POST'])
+# @roles_required('admin')  # Uncomment if role-based access is needed
+def delete_user():
+    data = request.get_json()  # Get JSON data from request
+    user_id = data.get('id')
+
+    if not user_id:
+        return jsonify({'error': 'User ID is required'}), 400
+
+    user = User.query.get(user_id)
+    
+    if not user:
+        return jsonify({'error': 'User does not exist'}), 404
+
+    # Check and delete associated professional or customer
+    prof = Professional.query.filter_by(user_id=user.id).first()
+    if prof:
+        db.session.delete(prof)
+
+    cust = Customer.query.filter_by(user_id=user.id).first()
+    if cust:
+        db.session.delete(cust)
+
+    db.session.delete(user)
+    db.session.commit()
+
+    return jsonify({'message': 'User deleted successfully'}), 200
 
 
            
@@ -838,6 +1275,42 @@ def debug_roles():
 #         return render_template('profile_cust.html', user=user, customer=customer)
 #     flash('Unexpected role. Please contact support.')
 #     return redirect(url_for('home')) 
+@app.route('/api/profile', methods=['GET'])
+@login_required
+def profile():
+    user = User.query.get(session.get('user_id'))
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    
+    role = Role.query.get(user.role_id)
+    if not role:
+        return jsonify({"message": "Role not found"}), 404
+
+    profile_data = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": role.name
+    }
+
+    if role.name == 'Professional':
+        professional = Professional.query.filter_by(user_id=user.id).first()
+        if professional:
+            profile_data["professional"] = {
+                "id": professional.id,
+                "experience": professional.experience,
+                "service_type": professional.service_type
+            }
+    
+    elif role.name == 'Customer':
+        customer = Customer.query.filter_by(user_id=user.id).first()
+        if customer:
+            profile_data["customer"] = {
+                "id": customer.id,
+                "location": customer.location
+            }
+
+    return jsonify(profile_data), 200
 
 # @app.route('/profile', methods=['POST'])
 # @login_required
@@ -976,6 +1449,79 @@ def debug_roles():
     
 #     flash('Unexpected role. Please contact support.')
 #     return redirect(url_for('home'))
+@app.route('/api/profile', methods=['POST'])
+def profile_post():
+    """API endpoint to update user profile"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized access'}), 401
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    role = Role.query.get(user.role_id)
+    if not role:
+        return jsonify({'error': 'Role not found'}), 404
+
+    data = request.json  # Extract JSON data from the request
+
+    # Extract common fields
+    username = data.get('username')
+    cpassword = data.get('cpassword')
+    password = data.get('password')
+
+    if not username or not cpassword or not password:
+        return jsonify({'error': 'Please fill out all required fields'}), 400
+
+    # Validate current password
+    if not check_password_hash(user.passhash, cpassword):
+        return jsonify({'error': 'Incorrect current password'}), 403
+
+    # Check if the new username is already taken
+    if username != user.username:
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            return jsonify({'error': 'Username already exists'}), 409
+
+    # Hash the new password
+    new_password_hash = generate_password_hash(password)
+    user.username = username
+    user.passhash = new_password_hash
+
+    # Role-specific updates
+    if role.name == 'Admin':
+        admin = Admin.query.filter_by(user_id=user.id).first()
+        if not admin:
+            return jsonify({'error': 'Admin profile not found'}), 404
+        admin.name = data.get('name', admin.name)
+        user.name = admin.name
+
+    elif role.name == 'Professional':
+        professional = Professional.query.filter_by(user_id=user.id).first()
+        if not professional:
+            return jsonify({'error': 'Professional profile not found'}), 404
+        professional.email = data.get('email', professional.email)
+        professional.name = data.get('name', professional.name)
+        professional.contact = data.get('contact', professional.contact)
+        professional.location = data.get('location', professional.location)
+        professional.experience = data.get('experience', professional.experience)
+        user.name = professional.name
+
+    elif role.name == 'Customer':
+        customer = Customer.query.filter_by(user_id=user.id).first()
+        if not customer:
+            return jsonify({'error': 'Customer profile not found'}), 404
+        customer.email = data.get('email', customer.email)
+        customer.name = data.get('name', customer.name)
+        customer.contact = data.get('contact', customer.contact)
+        customer.location = data.get('location', customer.location)
+        user.name = customer.name
+
+    else:
+        return jsonify({'error': 'Unexpected role. Please contact support.'}), 400
+
+    db.session.commit()
+    return jsonify({'message': 'Profile updated successfully'}), 200
 
 
 
@@ -1001,16 +1547,64 @@ def debug_roles():
 #     unblocked_customers = [Customer.query.filter_by(is_blocked=False).count()]
 
 #     return render_template('admin_db.html',categories=categories, category_names=category_names, category_sizes=category_sizes, blocked_professionals=blocked_professionals, pending_professionals=pending_professionals, approved_professionals=approved_professionals, blocked_customers=blocked_customers, unblocked_customers=unblocked_customers, admin=admin)
+
+@app.route('/api/admin_db', methods=['GET'])
+@roles_required('admin')
+def admin_db():
+    """Fetch admin dashboard data as JSON"""
+    admin = Admin.query.filter_by(user_id=session.get('user_id')).first()
+    
+    if not admin:
+        return jsonify({"error": "Admin not found"}), 404
+
+    categories = Category.query.all()
+    category_data = [
+        {
+            "name": category.name,
+            "service_count": len(category.services)
+        } 
+        for category in categories
+    ]
+
+    pending_professionals = Professional.query.filter_by(is_verified=False).count()
+    blocked_professionals = Professional.query.filter_by(is_flagged=True).count()
+    approved_professionals = Professional.query.filter_by(is_verified=True).count()
+    
+    blocked_customers = Customer.query.filter_by(is_blocked=True).count()
+    unblocked_customers = Customer.query.filter_by(is_blocked=False).count()
+
+    return jsonify({
+        "admin": {
+            "id": admin.id,
+            "username": admin.user.username
+        },
+        "categories": category_data,
+        "professional_counts": {
+            "pending": pending_professionals,
+            "blocked": blocked_professionals,
+            "approved": approved_professionals
+        },
+        "customer_counts": {
+            "blocked": blocked_customers,
+            "unblocked": unblocked_customers
+        }
+    }), 200
+
 # #----------------Add category pages-----------------------------------
 
-# @app.route('/category/add')
-# @roles_required('admin')
-# def add_category():
-#     categories=Category.query.all()
-#     category_names = [category.name for category in categories]
-#     category_sizes = [len(category.services) for category in categories]
+@app.route('/api/category/add', methods=['GET'])
+@roles_required('admin')
+def add_category():
+    """Get a list of categories along with the count of services in each category."""
+    categories = Category.query.all()
 
-#     return render_template('category/add.html', categories=categories, category_names=category_names, category_sizes=category_sizes)
+    category_list = [{
+        'id': category.id,
+        'name': category.name,
+        'service_count': len(category.services)
+    } for category in categories]
+
+    return jsonify({'categories': category_list}), 200
 
 # @app.route('/category/add',methods=['POST'])
 # @roles_required('admin')
@@ -1024,6 +1618,24 @@ def debug_roles():
 #     db.session.commit()
 #     flash("Service_Type added successfully")
 #     return redirect(url_for('add_service', category_id=category.id))
+@app.route('/api/category/add', methods=['POST'])
+@roles_required('admin')
+def add_category_post():
+    data = request.get_json()  # Get JSON data from request
+    name = data.get('name')
+
+    if not name:
+        return jsonify({'error': 'Please provide a category name'}), 400  # Bad Request
+
+    category = Category(name=name)
+    db.session.add(category)
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Service_Type added successfully',
+        'category_id': category.id
+    }), 201  # Created
+
 
 # @app.route('/category/<int:id>/')
 # @roles_required('admin')
@@ -1034,6 +1646,19 @@ def debug_roles():
 #         return redirect(url_for('admin_db'))
 #     return render_template('category/show.html', category=category)
 #     #return("show category")
+@app.route('/api/category/<int:id>/', methods=['GET'])
+# @roles_required('admin')
+def show_category(id):
+    category = Category.query.get(id)
+    if not category:
+        return jsonify({'error': 'Service_Type does not exist'}), 404
+
+    return jsonify({
+        'id': category.id,
+        'name': category.name,
+        'description': category.description
+    }), 200
+
 
 # @app.route('/category/<int:id>/edit')
 # @roles_required('admin')

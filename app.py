@@ -4,8 +4,11 @@ from extensions import db
 from backend.models import User, Role, add_roles, create_default_admin
 
 # Initialize the Flask application
-app = Flask(__name__)
+# app = Flask(__name__)
+app = Flask(__name__,static_folder="frontend", template_folder="frontend", static_url_path='/static')
+
 #app.config.from_object('config.Config')
+
 app.config.from_object('backend.config.Config')
 
 
