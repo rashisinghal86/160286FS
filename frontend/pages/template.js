@@ -1,8 +1,15 @@
 export default {
     template:`
     <div>
-        
-        // add html file here
+    <div class="container mt-4">
+    <h2 class="display-5">
+        Household Services Application - PLATFORM
+    </h2>
+    <div class="home">
+        <img src="https://api.dicebear.com/9.x/bottts/svg?seed=Platform" width="100" alt="avatar">
+
+
+    </div>
     </div>
     `
     ,

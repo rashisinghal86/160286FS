@@ -8,6 +8,7 @@ import template from '../pages/template.js';
 import home from '../pages/home.js';
 
 
+
 const routes = [
     {path: '/', component: Home},
     {path: '/login', component: LoginPage},

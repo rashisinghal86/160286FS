@@ -217,7 +217,7 @@ def register():
     db.session.commit()
 
     # If the user is assigned the 'Customer' role, create a corresponding entry in the Customer table
-    if role_name == 'Customer':
+    if role_name == 'customer':
         # You can add logic to get contact information from the request
         customer = Customer(
             user_id=user.id,
@@ -228,7 +228,8 @@ def register():
         )
         db.session.add(customer)
         db.session.commit()
-    elif role_name == 'Professional':
+        print("Customer committed to DB")
+    elif role_name == 'professional':
         professional = Professional(
             user_id=user.id,
             email=email,
