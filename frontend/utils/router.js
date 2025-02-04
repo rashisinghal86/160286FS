@@ -23,8 +23,15 @@ import delete_user from '../pages/delete_user.js';
 import flag_prof from '../pages/flag_prof.js';
 import layout from '../pages/layout.js';
 import login_copy from '../pages/login_copy.js';
-
-
+import manage_customers from '../pages/manage_customers.js';
+import messages from '../components/messages.js';
+import pending_professionals from '../pages/pending_professionals.js';
+import prof_booking from '../pages/prof_booking.js';
+import prof_byrating from '../pages/prof_byrating.js';
+import prof_db from '../pages/prof_db.js';
+import professionals from '../pages/professionals.js';
+import profile_admin from '../pages/profile_admin.js';
+import profile_cust from '../pages/profile_cust.js';
 
 
 
@@ -55,6 +62,15 @@ const routes = [
     {path: '/flag_prof', component: flag_prof},
     {path: '/layout', component: layout},
     {path: '/login_copy', component: login_copy},
+    {path: '/manage_customers', component: manage_customers},
+    {path: 'messages', component: messages},
+    {path: '/pending_professionals', component: pending_professionals},
+    {path: '/prof_booking', component: prof_booking},
+    {path: '/prof_byrating', component: prof_byrating},
+    {path: '/prof_db', component: prof_db},
+    {path: '/professionals', component: professionals},
+    {path: '/profile_admin', component: profile_admin},
+    {path: '/profile_cust', component: profile_cust},
 
 
 
