@@ -6,6 +6,20 @@ import LoginPage from '../pages/LoginPage.js';
 import RegisterPage from '../pages/Register.js';
 import template from '../pages/template.js';
 import home from '../pages/home.js';
+import homecss from '../pages/homecss.js';
+import Registercopy from '../pages/Registercopy.js'; 
+import add_to_schedule from '../pages/add_to_schedule.js';
+import admin_booking from '../pages/admin_booking.js';
+import admin_db from '../pages/admin_db.js';
+import block_cust from '../pages/block_cust.js';
+import booking from '../pages/booking.js';
+import bookings from '../pages/bookings.js';
+import catalogue from '../pages/catalogue.js';
+
+
+
+
+
 
 
 
@@ -14,7 +28,20 @@ const routes = [
     {path: '/login', component: LoginPage},
     {path: '/register', component: RegisterPage},
     {path: '/template', component: template},
-    {path: '/home', component: home}
+    {path: '/home', component: home},
+    {path: '/homecss', component: homecss},
+    {path: '/registercopy', component: Registercopy},
+    {path: '/add_to_schedule', component: add_to_schedule},
+    {path: '/admin_booking', component: admin_booking},
+    {path: '/admin_db', component: admin_db},
+    {path: '/block_cust', component: block_cust},
+    {path: '/booking', component: booking },
+    {path: '/bookings', component: bookings },
+    {path: '/catalogue', component: catalogue },
+
+
+
+
 
 ]
 

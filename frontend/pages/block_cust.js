@@ -1,9 +1,12 @@
 export default {
     template:`
     <div>
-        
-        // add html file here
-    </div>
+        div class="container mt-5">
+    <h1 class="display-1">Welcome custname reference</h1>
+    <h2 class="display-4">Your account is blocked</h2>
+    <h5>You will be connected shortly!</h5>
+    <a href="/signout" class="btn btn-danger btn-lg">EXIT</a>
+</div>    </div>
     `
     ,
     data() {

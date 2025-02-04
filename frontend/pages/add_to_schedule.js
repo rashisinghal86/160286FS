@@ -1,10 +1,15 @@
 export default {
-    template:`
-    <div>
-        
-        // add html file here
-    </div>
-    `
+   template: `
+  <div>
+    <h1 class="display-1">
+      Hello
+      
+      
+    </h1>
+  </div>
+`
+
+
     ,
     data() {
         return {
