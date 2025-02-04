@@ -15,6 +15,15 @@ import block_cust from '../pages/block_cust.js';
 import booking from '../pages/booking.js';
 import bookings from '../pages/bookings.js';
 import catalogue from '../pages/catalogue.js';
+import cust_bookings from '../pages/cust_bookings.js';
+import cust_db from '../pages/cust_db.js';
+import custom_login from '../pages/custom_login.js';
+import customers from '../pages/customers.js';
+import delete_user from '../pages/delete_user.js';
+import flag_prof from '../pages/flag_prof.js';
+import layout from '../pages/layout.js';
+import login_copy from '../pages/login_copy.js';
+
 
 
 
@@ -37,7 +46,23 @@ const routes = [
     {path: '/block_cust', component: block_cust},
     {path: '/booking', component: booking },
     {path: '/bookings', component: bookings },
-    {path: '/catalogue', component: catalogue },
+    {path: '/catalogue', component: catalogue }, 
+    {path: '/cust_bookings', component: cust_bookings },
+    {path: '/cust_db', component: cust_db},
+    {path: '/custom_login', component: custom_login},
+    {path: '/customers', component: customers},
+    {path: '/delete_user', component: delete_user},
+    {path: '/flag_prof', component: flag_prof},
+    {path: '/layout', component: layout},
+    {path: '/login_copy', component: login_copy},
+
+
+
+
+
+
+
+
 
 
 

@@ -1,5 +1,5 @@
 from flask_restful import Resource, Api,fields, marshal_with, request
-from flask_security import auth_required, current_user
+# from flask_security import auth_required, current_user
 from backend.models import Category,db
 
 api = Api(prefix='/api')
