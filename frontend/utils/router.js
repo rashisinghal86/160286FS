@@ -32,6 +32,19 @@ import prof_db from '../pages/prof_db.js';
 import professionals from '../pages/professionals.js';
 import profile_admin from '../pages/profile_admin.js';
 import profile_cust from '../pages/profile_cust.js';
+import profile_prof from '../pages/profile_prof.js';
+import rate_booking from '../pages/rate_booking.js';
+import registercopy from '../pages/Registercopy.js';
+import register_abd from '../pages/register_abd.js';
+import register_cdb from '../pages/register_cdb.js';
+import register_pdb from '../pages/register_pdb.js';
+import schedule_edit from '../pages/schedule_edit.js';
+import schedule from '../pages/schedule.js';
+import Searchbar from '../pages/searchbar.js';
+import searchbar2 from '../pages/searchbar2.js';
+import searchbar3 from '../pages/searchbar3.js';
+import verify_prof from '../pages/verify_prof.js';
+import view_appointments from '../pages/view_appointments.js'
 
 
 
@@ -71,6 +84,20 @@ const routes = [
     {path: '/professionals', component: professionals},
     {path: '/profile_admin', component: profile_admin},
     {path: '/profile_cust', component: profile_cust},
+    {path: '/profile_prof', component: profile_prof},
+    {path: '/rate_booking', component: rate_booking},
+    {path: '/registercopy', component: Registercopy},
+    {path: '/register_abd', component: register_abd},
+    {path: '/register_cdb', component: register_cdb},
+    {path: '/register_pdb', component: register_pdb},
+    {path: '/schedule_edit', component: schedule_edit},
+    {path: '/schedule', component: schedule},
+    {path: '/searchbar', component: Searchbar},
+    {path: '/searchbar2', component: searchbar2},
+    {path: '/searchbar3', component:searchbar3},
+    {path: '/verify_prof', component:verify_prof},
+    {path: '/view_appointments', component:view_appointments}
+
 
 
 
