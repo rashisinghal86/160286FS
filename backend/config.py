@@ -18,6 +18,13 @@ class Config:
     SECURITY_CONFIRMABLE = True
     SECURITY_CHANGEABLE = True
 
+    # Token Authentication Configurations (NEW)
+    SECURITY_TOKEN_AUTHENTICATION_HEADER = 'Authentication-Token'
+    SECURITY_TOKEN_MAX_AGE = 3600  # Token expires in 1 hour
+    SECURITY_API_ENABLED_METHODS = ['POST']  # Enables API-based authentication
+    SECURITY_TOKEN_AUTHENTICATION_KEY = 'token'
+    SECURITY_LOGIN_WITHOUT_CONFIRMATION = True  # Allow login without email confirmation
+
     # Email Configurations (if using email confirmation)
     MAIL_SERVER = 'smtp.example.com'
     MAIL_PORT = 587

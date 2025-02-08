@@ -118,7 +118,8 @@ def login():
                     "id": user.id,
                     "username": user.username,
                     "email": user.email
-                }
+                },
+                 "authentication_token": user.get_auth_token()  # Generate token
             }), 200
         else:
             return jsonify({"error": "Invalid email or password."}), 401
@@ -201,10 +202,16 @@ def register():
     # Check if the email is already registered
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "Email already registered. Please log in."}), 400
+    # Query for the role first
+    role = Role.query.filter_by(name=role_name).first()
 
+    if not role:
+        return jsonify({"error": "Invalid role selected."}), 400
     # Hash the password and create a new user
+
+    role_id= role.id
     password_hash = generate_password_hash(password)
-    user = User(email=email, username=username, password=password_hash, active=True)
+    user = User(email=email, username=username, password=password_hash,role_id=role_id, active=True)
 
     # Assign a role to the user if roles exist
     if role_name:
@@ -217,7 +224,7 @@ def register():
     db.session.commit()
 
     # If the user is assigned the 'Customer' role, create a corresponding entry in the Customer table
-    if role_name == 'customer':
+    if role_name == 'Customer':
         # You can add logic to get contact information from the request
         customer = Customer(
             user_id=user.id,
@@ -229,7 +236,7 @@ def register():
         db.session.add(customer)
         db.session.commit()
         print("Customer committed to DB")
-    elif role_name == 'professional':
+    elif role_name == 'Professional':
         professional = Professional(
             user_id=user.id,
             email=email,
@@ -329,53 +336,23 @@ def debug_roles():
 #         if customer:
 #             return redirect(url_for('cust_db', username=customer.users.username))
 
-@app.route('/api/home', methods=['GET'])
-@login_required  # This will ensure the user is logged in before accessing this route
+# 
+@app.route('/home')
+@login_required
 def home():
-    # Check if the user is authenticated
-    if not current_user.is_authenticated:
-        return jsonify({'error': 'User not authenticated'}), 401
+    print(f"Current User: {current_user}")  # Debugging step
+    print(f"User Roles: {current_user.roles}")  # Debugging step
 
-    # Get the user and role information
-    user = User.query.get(current_user.id)
-    role = Role.query.get(user.role_id)
+    # Check if the user has a role before accessing `role.name`
+    if current_user.roles:
+        for role in current_user.roles:
+            print(f"Role: {role.name}")  # Debugging step
+            if role.name == 'Admin':
+                return jsonify({"message": "Welcome, Admin!"})
+    else:
+        print("User has no roles assigned!")  # Debugging step
 
-    # Prepare the response based on the role of the user
-    if role.name == 'Admin':
-        admin = Admin.query.filter_by(user_id=user.id).first()
-        if admin:
-            return jsonify({
-                'message': 'Admin dashboard',
-                'admin_username': admin.user.username,
-                'role': role.name
-            }), 200
-        else:
-            return jsonify({'error': 'Admin not found'}), 404
-
-    elif role.name == 'Professional':
-        professional = Professional.query.filter_by(user_id=user.id).first()
-        if professional:
-            return jsonify({
-                'message': 'Professional dashboard',
-                'professional_username': professional.users.username,
-                'role': role.name
-            }), 200
-        else:
-            return jsonify({'error': 'Professional not found'}), 404
-
-    elif role.name == 'Customer':
-        customer = Customer.query.filter_by(user_id=user.id).first()
-        if customer:
-            return jsonify({
-                'message': 'Customer dashboard',
-                'customer_username': customer.users.username,
-                'role': role.name
-            }), 200
-        else:
-            return jsonify({'error': 'Customer not found'}), 404
-
-    return jsonify({'error': 'Role not recognized'}), 400
-
+    return jsonify({"message": "Welcome to Home Page!"})
 
 # #--1. registering a user-----------------------------------
 # @app.route('/register')

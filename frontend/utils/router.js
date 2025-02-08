@@ -76,7 +76,7 @@ const routes = [
     {path: '/layout', component: layout},
     {path: '/login_copy', component: login_copy},
     {path: '/manage_customers', component: manage_customers},
-    {path: 'messages', component: messages},
+    {path: '/messages', component: messages},
     {path: '/pending_professionals', component: pending_professionals},
     {path: '/prof_booking', component: prof_booking},
     {path: '/prof_byrating', component: prof_byrating},
