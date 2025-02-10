@@ -6,38 +6,41 @@ export default {
                 <div class="card-body">
                     <h1 class="display-4 text-center">Register</h1>
 
-                    <div class="form-group">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" name="email" required class="form-control" v-model="email">
-                    </div>
+                    <form @submit.prevent="submitRegister">
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" name="email" required class="form-control" v-model="email">
+                        </div>
 
-                    <div class="form-group">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" name="username" required class="form-control" v-model="username">
-                    </div>
+                        <div class="form-group">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" name="username" required class="form-control" v-model="username">
+                        </div>
 
-                    <div class="form-group">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" name="password" required class="form-control" v-model="password">
-                    </div>
+                        <div class="form-group">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" name="password" required class="form-control" v-model="password">
+                        </div>
 
-                    <div class="form-group">
-                        <label for="confirm-password" class="form-label">Confirm Password</label>
-                        <input type="password" name="confirm_password" required class="form-control" v-model="confirmPassword">
-                    </div>
+                        <div class="form-group">
+                            <label for="confirm-password" class="form-label">Confirm Password</label>
+                            <input type="password" name="confirm_password" required class="form-control" v-model="confirmPassword">
+                        </div>
 
-                    <div class="form-group">
-                        <label for="role" class="form-label">Role</label>
-                        <select name="role_name" id="role" class="form-control" v-model="selectedRole" required>
-                            <option value="customer">Customer</option>
-                            <option value="professional">Professional</option>
-                        </select>
-                    </div>
+                        <div class="form-group">
+                            <label for="role" class="form-label">Role</label>
+                            <select name="role" id="role" class="form-control" v-model="selectedRole" required>
+                                <option value="" disabled>Select a role</option>
+                                <option value="Customer">Customer</option>
+                                <option value="Professional">Professional</option>
+                            </select>
+                        </div>
 
-                    <br>
-                    <div class="form-group button-container">
-                        <button @click="submitRegister" class="btn btn-primary">Register</button>
-                    </div>
+                        <br>
+                        <div class="form-group text-center">
+                            <button type="submit" class="btn btn-primary">Register</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -65,7 +68,7 @@ export default {
             }
 
             try {
-                const response = await fetch(location.origin + '/api/register', {
+                const response = await fetch(window.location.origin + '/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -73,17 +76,18 @@ export default {
                         username: this.username,
                         password: this.password,
                         confirm_password: this.confirmPassword,
-                        role_name: this.selectedRole
+                        role: this.selectedRole  // Ensure backend expects "role" instead of "role_name"
                     })
                 });
 
                 if (response.ok) {
-                    console.log('Register success');
                     const data = await response.json();
-                    window.alert('Registration successful!');
+                    window.alert(`Registration successful! Welcome, ${data.username}`);
+                    console.log('Success:', data);
                 } else {
                     const errorData = await response.json();
-                    window.alert(`Error: ${errorData.message}`);
+                    window.alert(`Error: ${errorData.message || "Something went wrong."}`);
+                    console.error("Response Error:", errorData);
                 }
             } catch (error) {
                 console.error("Registration failed:", error);

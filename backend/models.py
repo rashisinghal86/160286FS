@@ -41,7 +41,7 @@ class Professional(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     email  = db.Column(db.String(80), nullable=False)
     name = db.Column(db.String(80), nullable=False)
-    filename = db.Column(db.String(80), unique=True, nullable=False)
+    filename = db.Column(db.String(80), unique=False, nullable=False)
     contact = db.Column(db.String(80), nullable=False)
     service_type = db.Column(db.String(80), nullable=False)
     experience = db.Column(db.String(80), nullable=True)

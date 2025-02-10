@@ -49,9 +49,6 @@ import view_appointments from '../pages/view_appointments.js'
 
 
 
-
-
-
 const routes = [
     {path: '/', component: Home},
     {path: '/login', component: LoginPage},

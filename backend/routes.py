@@ -94,36 +94,49 @@ def login():
     if request.method == 'GET':
         # Respond with JSON if already authenticated
         if current_user.is_authenticated:
-            return jsonify({"message": "You are already logged in."}), 200
+            return jsonify({"message": "You are already logged in.",
+                    "user": {
+                    "id": current_user.id,
+                    "username": current_user.username,
+                    "email": current_user.email,
+                    "role": current_user.role.name  # Fetch dynamic role
+                }
+            }), 200
         return jsonify({"message": "Please log in to continue."}), 200
 
     elif request.method == 'POST':
-        # Extract email and password from the request
-        data = request.get_json()  # Expecting JSON input in POST
+
+        data = request.get_json()
         email = data.get('email')
         password = data.get('password')
 
-        # Validate the input
         if not email or not password:
             return jsonify({"error": "Email and password are required."}), 400
 
-        # Fetch the user from the database
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password, password):
-            # Log the user in
             login_user(user)
+            
+            # Ensure user has a role and return it in response
+            if not user.roles or len(user.roles) == 0:
+                return jsonify({"error": "User has no assigned role!"}), 400
+                     
             return jsonify({
                 "message": "Login successful!",
                 "user": {
                     "id": user.id,
                     "username": user.username,
-                    "email": user.email
-                },
-                 "authentication_token": user.get_auth_token()  # Generate token
-            }), 200
-        else:
-            return jsonify({"error": "Invalid email or password."}), 401
+                    "email": user.email,
+                    "role": user.roles[0].name  # Directly access the first role
 
+                },
+                "authentication_token": user.get_auth_token()  # Generate and return token
+            }), 200
+        print('working')
+        
+        return jsonify({"error": "Invalid email or password."}), 401
+
+        
 
 
 # @app.route('/register', methods=['GET', 'POST'])
@@ -191,6 +204,7 @@ def register():
     password = data.get('password')
     confirm_password = data.get('confirm_password')
     role_name = data.get('role')  # Optional: if assigning roles
+
 
     # Validate the form data
     if not email or not username or not password or not confirm_password:
