@@ -51,7 +51,7 @@ import view_appointments from '../pages/view_appointments.js'
 
 const routes = [
     {path: '/', component: Home},
-    {path: '/login', component: LoginPage},
+    {path: '/api/login', component: LoginPage},
     {path: '/register', component: RegisterPage},
     {path: '/template', component: template},
     {path: '/home', component: home},
@@ -59,7 +59,7 @@ const routes = [
     {path: '/registercopy', component: Registercopy},
     {path: '/add_to_schedule', component: add_to_schedule},
     {path: '/admin_booking', component: admin_booking},
-    {path: '/admin_db', component: admin_db},
+    {path: '/api/admin_db', component: admin_db},
     {path: '/block_cust', component: block_cust},
     {path: '/booking', component: booking },
     {path: '/bookings', component: bookings },
@@ -112,6 +112,23 @@ const routes = [
 
 const router = new VueRouter({
     routes
+})
+
+
+// navigation guards
+router.beforeEach((to, from, next) => {
+    if (to.matched.some((record) => record.meta.requiresLogin)){
+        if (!store.state.loggedIn){
+            next({path : '/login'})
+        } else if (to.meta.role && to.meta.role != store.state.role){
+            alert('role not authorized')
+             next({path : '/'})
+        } else {
+            next();
+        }
+    } else {
+        next();
+    }
 })
 
 export default router;

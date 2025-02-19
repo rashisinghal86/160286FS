@@ -116,6 +116,11 @@ def login():
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
+
+            # Store user ID in session
+            session['user_id'] = user.id
+            session.permanent = True  # Optional: Keeps the session active
+            
             
             # Ensure user has a role and return it in response
             if not user.roles or len(user.roles) == 0:
@@ -1271,6 +1276,7 @@ def delete_user():
 @login_required
 def profile():
     user = User.query.get(session.get('user_id'))
+    print("User ID in session:", session.get('user_id'))
     if not user:
         return jsonify({"message": "User not found"}), 404
     
@@ -1541,10 +1547,18 @@ def profile_post():
 #     return render_template('admin_db.html',categories=categories, category_names=category_names, category_sizes=category_sizes, blocked_professionals=blocked_professionals, pending_professionals=pending_professionals, approved_professionals=approved_professionals, blocked_customers=blocked_customers, unblocked_customers=unblocked_customers, admin=admin)
 
 @app.route('/api/admin_db', methods=['GET'])
-@roles_required('admin')
+@login_required
 def admin_db():
     """Fetch admin dashboard data as JSON"""
-    admin = Admin.query.filter_by(user_id=session.get('user_id')).first()
+
+    # ✅ Check if the logged-in user has the 'admin' role
+    # ✅ Check if the logged-in user has role_id 1
+    if current_user.role_id != 1:  
+        return jsonify({"error": "Forbidden: Admin access required"}), 403
+ 
+
+    # ✅ Fetch admin details  
+    admin = Admin.query.filter_by(user_id=current_user.id).first()
     
     if not admin:
         return jsonify({"error": "Admin not found"}), 404
@@ -1566,6 +1580,7 @@ def admin_db():
     unblocked_customers = Customer.query.filter_by(is_blocked=False).count()
 
     return jsonify({
+        
         "admin": {
             "id": admin.id,
             "username": admin.user.username

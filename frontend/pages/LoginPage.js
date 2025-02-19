@@ -35,6 +35,7 @@ export default {
             output: null,
         };
     },
+    
     methods: {
         async submitlogin() {
             try {
@@ -53,15 +54,18 @@ export default {
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-
+                
                 const data = await response.json();
+                localStorage.setItem('token', data.authentication_token);
                 this.output = data;
                 console.log("Login Successful:", data);
                 window.alert(`Login Success: ${data.email}`);
+                this.$store.commit('setUser')
+                this.$router.push('/api/admin_db') 
             } catch (error) {
                 console.error("Login Error:", error);
                 window.alert("Login Failed. Please check your credentials.");
             }
-        }
+        },
     }
 };

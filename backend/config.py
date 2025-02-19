@@ -23,6 +23,7 @@ class Config:
     SECURITY_TOKEN_MAX_AGE = 3600  # Token expires in 1 hour
     SECURITY_API_ENABLED_METHODS = ['POST']  # Enables API-based authentication
     SECURITY_TOKEN_AUTHENTICATION_KEY = 'token'
+    SECURITY_LOGIN_URL = '/api/login'
     SECURITY_LOGIN_WITHOUT_CONFIRMATION = True  # Allow login without email confirmation
 
     # Email Configurations (if using email confirmation)
