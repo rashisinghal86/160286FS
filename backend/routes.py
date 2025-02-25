@@ -1272,7 +1272,8 @@ def delete_user():
 #         return render_template('profile_cust.html', user=user, customer=customer)
 #     flash('Unexpected role. Please contact support.')
 #     return redirect(url_for('home')) 
-@app.route('/api/profile', methods=['GET'])
+@app.route('/api/profile', methods=['GET']) #not using this for now
+
 @login_required
 def profile():
     user = User.query.get(session.get('user_id'))
@@ -1462,17 +1463,19 @@ def profile_post():
         return jsonify({'error': 'Role not found'}), 404
 
     data = request.json  # Extract JSON data from the request
-
+    print(data)
     # Extract common fields
     username = data.get('username')
     cpassword = data.get('cpassword')
     password = data.get('password')
 
+    print(username, cpassword, password)
+
     if not username or not cpassword or not password:
         return jsonify({'error': 'Please fill out all required fields'}), 400
 
     # Validate current password
-    if not check_password_hash(user.passhash, cpassword):
+    if not check_password_hash(user.password, cpassword):
         return jsonify({'error': 'Incorrect current password'}), 403
 
     # Check if the new username is already taken
@@ -1484,10 +1487,11 @@ def profile_post():
     # Hash the new password
     new_password_hash = generate_password_hash(password)
     user.username = username
-    user.passhash = new_password_hash
+    user.password = new_password_hash
 
     # Role-specific updates
     if role.name == 'Admin':
+        print(role.name)
         admin = Admin.query.filter_by(user_id=user.id).first()
         if not admin:
             return jsonify({'error': 'Admin profile not found'}), 404
@@ -1598,21 +1602,6 @@ def admin_db():
     }), 200
 
 # #----------------Add category pages-----------------------------------
-
-@app.route('/api/category/add', methods=['GET'])
-@roles_required('admin')
-def add_category():
-    """Get a list of categories along with the count of services in each category."""
-    categories = Category.query.all()
-
-    category_list = [{
-        'id': category.id,
-        'name': category.name,
-        'service_count': len(category.services)
-    } for category in categories]
-
-    return jsonify({'categories': category_list}), 200
-
 # @app.route('/category/add',methods=['POST'])
 # @roles_required('admin')
 # def add_category_post():
@@ -1625,23 +1614,6 @@ def add_category():
 #     db.session.commit()
 #     flash("Service_Type added successfully")
 #     return redirect(url_for('add_service', category_id=category.id))
-@app.route('/api/category/add', methods=['POST'])
-@roles_required('admin')
-def add_category_post():
-    data = request.get_json()  # Get JSON data from request
-    name = data.get('name')
-
-    if not name:
-        return jsonify({'error': 'Please provide a category name'}), 400  # Bad Request
-
-    category = Category(name=name)
-    db.session.add(category)
-    db.session.commit()
-
-    return jsonify({
-        'message': 'Service_Type added successfully',
-        'category_id': category.id
-    }), 201  # Created
 
 
 # @app.route('/category/<int:id>/')
@@ -1653,18 +1625,6 @@ def add_category_post():
 #         return redirect(url_for('admin_db'))
 #     return render_template('category/show.html', category=category)
 #     #return("show category")
-@app.route('/api/category/<int:id>/', methods=['GET'])
-# @roles_required('admin')
-def show_category(id):
-    category = Category.query.get(id)
-    if not category:
-        return jsonify({'error': 'Service_Type does not exist'}), 404
-
-    return jsonify({
-        'id': category.id,
-        'name': category.name,
-        'description': category.description
-    }), 200
 
 
 # @app.route('/category/<int:id>/edit')
@@ -1676,6 +1636,7 @@ def show_category(id):
 #         flash('Service_Type does not exist')
 #         return redirect(url_for('admin_db'))
 #     return render_template("category/edit.html", category=category)
+
 
 # @app.route('/category/<int:id>/edit', methods=['POST'])
 # @roles_required('admin')
@@ -1692,6 +1653,8 @@ def show_category(id):
 #     db.session.commit()
 #     flash('Service_Type updated successfully')  
 #     return redirect(url_for('add_category'))
+
+
     
 
 # @app.route('/category/<int:id>/delete')
@@ -1714,6 +1677,95 @@ def show_category(id):
 #     db.session.commit()
 #     flash('Service_Type deleted successfully')
 #     return redirect(url_for('add_category'))
+
+
+# CRUD for category
+
+# Create a New Category (POST)check1:
+@app.route('/api/category', methods=['POST'])
+@login_required
+def add_category():
+    data = request.get_json()
+    name = data.get('name')
+
+    if not name:
+        return jsonify({'error': 'Please provide a category name'}), 400
+
+    category = Category(name=name)
+    db.session.add(category)
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Service_Type added successfully',
+        'category_id': category.id
+    }), 201
+# 2. Retrieve a Category by ID (GET):
+
+@app.route('/api/category/<int:id>', methods=['GET'])
+@login_required
+def get_category(id):
+    category = Category.query.get(id)
+    if not category:
+        return jsonify({'error': 'Service_Type does not exist'}), 404
+
+    return jsonify({
+        'id': category.id,
+        'name': category.name,
+    }), 200
+
+#all categories fetch 
+@app.route('/api/category', methods=['GET'])
+@login_required
+def get_categories():
+    categories = Category.query.all()
+    print(categories)
+    if not categories:
+        return jsonify({'error': 'Service_Type does not exist'}), 404
+    categories_list = []
+    for category in categories:
+        categories_list.append({
+            'id': category.id,
+            'name': category.name,
+            # Include other fields as necessary
+            # 'services': [{'id': service.id, 'name': service.name} for service in category.services]  # Example of related services
+        })
+    
+    return jsonify(categories_list), 200
+
+
+#  update a category(PUT)
+@app.route('/api/category/<int:id>', methods=['PUT'])
+@login_required
+def update_category(id):
+    category = Category.query.get(id)
+    if not category:
+        return jsonify({'error': 'Service_Type does not exist'}), 404
+
+    data = request.get_json()
+    name = data.get('name')
+
+    if not name:
+        return jsonify({'error': 'Please provide a category name'}), 400
+
+    category.name = name
+    db.session.commit()
+    return jsonify({'message': 'Service_Type updated successfully'}), 200
+
+
+# delete a category (DELETE)
+@app.route('/api/category/<int:id>', methods=['DELETE'])
+@login_required
+def delete_category(id):
+    category = Category.query.get(id)
+    if not category:
+        return jsonify({'error': 'Service_Type does not exist'}), 404
+
+    db.session.delete(category)
+    db.session.commit()
+
+    return jsonify({'message': 'Service_Type deleted successfully'}), 200
+
+
 
 # #----------- Add services packages in a category-----------------------------------
 # @app.route('/service/add/<int:category_id>')

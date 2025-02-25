@@ -45,6 +45,9 @@ import searchbar2 from '../pages/searchbar2.js';
 import searchbar3 from '../pages/searchbar3.js';
 import verify_prof from '../pages/verify_prof.js';
 import view_appointments from '../pages/view_appointments.js'
+import profilewrapper from '../components/profilewrapper.js';
+import Category from '../pages/category.js';
+
 
 
 
@@ -93,8 +96,10 @@ const routes = [
     {path: '/searchbar2', component: searchbar2},
     {path: '/searchbar3', component:searchbar3},
     {path: '/verify_prof', component:verify_prof},
-    {path: '/view_appointments', component:view_appointments}
-
+    {path: '/view_appointments', component:view_appointments},
+    { path: '/profile', component: profilewrapper },
+    { path: '/categories', component: Category },
+    
 
 
 

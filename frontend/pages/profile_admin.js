@@ -28,8 +28,8 @@ export default {
                         <input type="password" v-model="cpassword" name="cpassword" id="cpassword" class="form-control" required>
                     </div>
                     <div class="form-group">
-                        <label for="npassword" class="form-label">New Password</label>
-                        <input type="password" v-model="npassword" name="password" id="password" class="form-control" required>
+                        <label for="password" class="form-label">New Password</label>
+                        <input type="password" v-model="password" name="password" id="password" class="form-control" required>
                     </div>
                     <div class="form-group">
                         <label for="name" class="form-label">Name</label>
@@ -51,25 +51,25 @@ export default {
                 name: ''
             },
             cpassword: '',
-            npassword: ''
+            password: ''
         };
     },
     methods: {
         async fetchUserData() {
-            const response = await fetch('/api/user');
+            const response = await fetch('/api/users');
             if (response.ok) {
                 this.user = await response.json();
             }
         },
         async updateProfile() {
-            const response = await fetch('/api/update_profile', {
+            const response = await fetch('/api/profile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     username: this.user.username,
                     name: this.user.name,
                     cpassword: this.cpassword,
-                    npassword: this.npassword
+                    password: this.password
                 })
             });
             if (response.ok) {

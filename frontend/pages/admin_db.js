@@ -41,11 +41,13 @@ export default {
           output: null,
           admin: { name: 'Admin' },
           menuItems: [
-              { title: 'My Profile', link: '/api/profile', icon: 'fa-solid fa-id-card fa-4x', img: 'https://api.dicebear.com/9.x/initials/svg?seed=Profile', description: 'Click here to update your profile' },
-              { title: 'Service Management', link: '/add_category', icon: 'fa-brands fa-buffer fa-5x', img: 'https://api.dicebear.com/9.x/initials/svg?seed=Service Management', description: 'Click here to add category of services' },
+
+            
+              { title: 'My Profile', link: '/profile_admin', icon: 'fa-solid fa-id-card fa-4x', img: 'https://api.dicebear.com/9.x/initials/svg?seed=Profile', description: 'Click here to update your profile' },
+              { title: 'Service Management', link: '/categories', icon: 'fa-brands fa-buffer fa-5x', img: 'https://api.dicebear.com/9.x/initials/svg?seed=Service Management', description: 'Click here to add category of services' },
               { title: 'Professional Management', link: '/pending_professionals', icon: 'fa-solid fa-user-tie fa-5x', img: 'https://api.dicebear.com/9.x/initials/svg?seed=Professionals Management', description: 'Click here to verify professionals' },
               { title: 'Customer Management', link: '/manage_customers', icon: 'fa-solid fa-users fa-5x', img: 'https://api.dicebear.com/9.x/initials/svg?seed=Client Management', description: 'Click here to monitor customers' },
-              { title: 'Overview', link: '/admin_bookings', icon: 'fa-solid fa-file-invoice fa-5x', img: 'https://api.dicebear.com/9.x/initials/svg?seed=Overview', description: 'Click here to monitor all activities' }
+              { title: 'Overview', link: '/admin_booking', icon: 'fa-solid fa-file-invoice fa-5x', img: 'https://api.dicebear.com/9.x/initials/svg?seed=Overview', description: 'Click here to monitor all activities' }
           ],
           charts: [
               { id: 'myChart1', title: 'Services Summary' },
@@ -69,6 +71,7 @@ export default {
                   this.output = data;
                   console.log(data);
                   window.alert(data.email);
+                //   this.$router.push('/api/category')
               }
           } catch (error) {
               console.error('Login failed', error);
