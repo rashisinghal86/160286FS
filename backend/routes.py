@@ -2363,7 +2363,7 @@ def schedule_service(service_id):
 #     flash('schedule updated')
 #     schedules = Schedule.query.filter_by(customer_id=session['user_id']).all()
 #     return render_template('schedule.html',schedule=schedule,schedules=schedules)
-@app.route('/api/schedule/<int:id>/edit', methods=['PUT'])
+@app.route('/api/schedule/edit/<int:id>', methods=['PUT'])
 @login_required
 def edit_schedule(id):
     schedule = Schedule.query.get(id)
@@ -2420,7 +2420,7 @@ def edit_schedule(id):
 #     db.session.commit()
 #     flash('Schedule deleted successfully, Create new one')
 #     return redirect(url_for('schedule'))
-@app.route('/api/schedule/<int:id>/delete', methods=['DELETE'])
+@app.route('/api/schedule/delete/<int:id>', methods=['DELETE'])
 @login_required
 def delete_schedule(id):
     user = User.query.get(session['user_id'])

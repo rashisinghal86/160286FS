@@ -28,9 +28,9 @@ export default {
             <td>{{ schedule.location }}</td>
             <td>{{ schedule.schedule_datetime }}</td>
             <td>
-              <router-link :to="'/edit_schedule/' + schedule.id" class="btn btn-success">
+              <button @click="openEditModal(schedule)" class="btn btn-success">
                 <i class="fas fa-check"></i> Edit Schedule
-              </router-link>
+              </button>
             </td>
             <td>
               <button @click="deleteSchedule(schedule.id)" class="btn btn-danger">
@@ -45,11 +45,43 @@ export default {
         <p>There is no schedule found in the database. Please add a schedule to proceed.</p>
         <a href="/catalogue" class="btn btn-outline-primary">Check Catalogue to Schedule Services</a>
       </div>
+
+      <!-- Edit Schedule Modal -->
+      <div v-if="showEditModal" class="modal" tabindex="-1" role="dialog" style="display: block;">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Edit Schedule</h5>
+              <button type="button" class="close" @click="closeEditModal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <form @submit.prevent="updateSchedule">
+                <div class="form-group">
+                  <label for="schedule_datetime" class="form-label">Schedule Datetime:</label>
+                  <input v-model="editScheduleData.schedule_datetime" type="datetime-local" id="schedule_datetime" class="form-control" required>
+                </div>
+                <div class="form-group mt-3">
+                  <button type="submit" class="btn btn-success">
+                    <i class="fas fa-edit"></i> Update
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `,
   data() {
     return {
-      schedules: []
+      schedules: [],
+      showEditModal: false,
+      editScheduleData: {
+        id: null,
+        schedule_datetime: ''
+      }
     };
   },
   methods: {
@@ -67,9 +99,34 @@ export default {
         console.error('Error fetching schedules:', error);
       }
     },
+    openEditModal(schedule) {
+      this.editScheduleData = { ...schedule };
+      this.showEditModal = true;
+    },
+    closeEditModal() {
+      this.showEditModal = false;
+    },
+    async updateSchedule() {
+      try {
+        const response = await fetch(`/api/schedule/edit/${this.editScheduleData.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ schedule_datetime: this.editScheduleData.schedule_datetime })
+        });
+        if (response.ok) {
+          alert('Schedule updated successfully');
+          this.closeEditModal();
+          this.fetchSchedules();  // Refresh the list of schedules
+        } else {
+          console.error('Failed to update schedule:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error updating schedule:', error);
+      }
+    },
     async deleteSchedule(scheduleId) {
       try {
-        const response = await fetch(`/api/schedule/${scheduleId}`, {
+        const response = await fetch(`/api/schedule/delete/${scheduleId}`, {
           method: 'DELETE'
         });
         if (response.ok) {
