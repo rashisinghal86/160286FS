@@ -7,7 +7,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
 
-from flask import request, render_template, redirect, url_for, flash
 from flask_security.utils import verify_and_update_password, login_user
 import os
 from werkzeug.utils import secure_filename
@@ -120,26 +119,73 @@ def login():
             # Store user ID in session
             session['user_id'] = user.id
             session.permanent = True  # Optional: Keeps the session active
-            
+            role = Role.query.get(user.role_id)
+            print(role)
+            print(role.name)
             
             # Ensure user has a role and return it in response
             if not user.roles or len(user.roles) == 0:
                 return jsonify({"error": "User has no assigned role!"}), 400
-                     
-            return jsonify({
-                "message": "Login successful!",
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email,
-                    "role": user.roles[0].name  # Directly access the first role
+            
+            if role.name == 'Professional':
+                professional = Professional.query.filter_by(user_id=user.id).first()
+                if not professional:
+                    return jsonify({'message': 'Professional profile not found', 'redirect_url': url_for('register_pdb')}), 404
+                if professional.is_flagged:
+                    return jsonify({'message': 'Professional is flagged', 'redirect_url': url_for('flag_prof', professional_id=professional.id)}), 403
+                if professional.is_verified:
+                    return jsonify({'message': 'Professional login successful', 'redirect_url': url_for('prof_db', username=professional.user.username)}), 200
+                else:
+                    return jsonify({'message': 'Professional not verified', 'redirect_url': url_for('verify_prof', professional_id=professional.id)}), 403
 
-                },
-                "authentication_token": user.get_auth_token()  # Generate and return token
-            }), 200
-        print('working')
-        
-        return jsonify({"error": "Invalid email or password."}), 401
+            elif role.name == 'Customer':
+                customer = Customer.query.filter_by(user_id=user.id).first()
+                if customer:
+                    if customer.is_blocked:
+                        return jsonify({'message': 'Customer is blocked', 'redirect_url': url_for('block_cust', customer_id=customer.id)}), 403
+                    return jsonify({
+                    "message": "Login successful!",
+                    "customer": {
+                        "id": customer.user_id,
+                        "name": customer.name,
+                        "email": customer.email,
+                        "role": "Customer"  # Directly access the first role
+
+                    },
+                    "authentication_token": user.get_auth_token()  # Generate and return token
+                }), 200
+
+                
+            
+                    
+                    # return jsonify({'message': 'Customer login successful', 'redirect_url':url_for('cust_db', user_id=customer.user_id)}), 200
+                else:
+                    return jsonify({'message': 'Customer profile not found', 'redirect_url': url_for('register_cdb')}), 404
+            else:
+                admin = Admin.query.filter_by(user_id=user.id).first()
+                return jsonify({
+                    "message": "Login successful!",
+                    "customer": {
+                        "id": admin.user_id,
+                        "name": admin.name,
+                        "role": "Admin"  # Directly access the first role
+
+                    },
+                    "authentication_token": user.get_auth_token()  # Generate and return token
+                }), 200
+        else:
+                return jsonify({
+                    "message": "Login successful!",'redirect_url': url_for('home'),
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                        "role": user.roles[0].name  # Directly access the first role
+
+                    },
+                    "authentication_token": user.get_auth_token()  # Generate and return token
+                }), 200
+            
 
         
 
@@ -1890,6 +1936,76 @@ def delete_category(id):
 #     flash('Service deleted successfully')
 #     return redirect(url_for('show_category', id=category_id))
 
+@app.route('/api/categories/<int:category_id>/services', methods=['POST'])
+@login_required
+def create_service(category_id):
+    category = Category.query.get_or_404(category_id)
+    data = request.get_json()
+    new_service = Service(
+        category_id=category.id,
+        name=data['name'],
+        type=data['type'],
+        description=data['description'],
+        price=data['price'],
+        location=data['location'],
+        duration=data['duration']
+    )
+    db.session.add(new_service)
+    db.session.commit()
+    return jsonify({'message': 'Service created successfully', 'service_id': new_service.id}), 201
+
+
+@app.route('/api/categories/<int:category_id>/services', methods=['GET'])
+@login_required
+def get_services(category_id):
+    services = Service.query.filter_by(category_id=category_id).all()
+    services_list = [{
+        'id': service.id,
+        'name': service.name,
+        'type': service.type,
+        'description': service.description,
+        'price': service.price,
+        'location': service.location,
+        'duration': service.duration
+    } for service in services]
+    return jsonify(services_list), 200
+
+@app.route('/api/categories/<int:category_id>/services/<int:service_id>', methods=['GET'])
+@login_required
+def get_service(category_id, service_id):
+    service = Service.query.filter_by(id=service_id, category_id=category_id).first_or_404()
+    return jsonify({
+        'id': service.id,
+        'name': service.name,
+        'type': service.type,
+        'description': service.description,
+        'price': service.price,
+        'location': service.location,
+        'duration': service.duration
+    }), 200
+
+@app.route('/api/categories/<int:category_id>/services/<int:service_id>', methods=['PUT'])
+@login_required
+def update_service(category_id, service_id):
+    service = Service.query.filter_by(id=service_id, category_id=category_id).first_or_404()
+    data = request.get_json()
+    service.name = data.get('name', service.name)
+    service.type = data.get('type', service.type)
+    service.description = data.get('description', service.description)
+    service.price = data.get('price', service.price)
+    service.location = data.get('location', service.location)
+    service.duration = data.get('duration', service.duration)
+    db.session.commit()
+    return jsonify({'message': 'Service updated successfully'}), 200
+
+@app.route('/api/categories/<int:category_id>/services/<int:service_id>', methods=['DELETE'])
+@login_required
+def delete_service(category_id, service_id):
+    service = Service.query.filter_by(id=service_id, category_id=category_id).first_or_404()
+    db.session.delete(service)
+    db.session.commit()
+    return jsonify({'message': 'Service deleted successfully'}), 200
+
 # #-----------------professional pages-----------------------------------
 
 # # @app.route('/applybook')
@@ -1905,6 +2021,28 @@ def delete_category(id):
 # def cust_db():
 #     cust_name = request.args.get('username') or ''
 #     return render_template('cust_db.html', cust_name=cust_name)
+@app.route('/cust_db/<int:user_id>')
+def cust_db(user_id):
+    customer = Customer.query.filter_by(user_id=user_id).first()
+    if not customer:
+        return jsonify({'message': 'Customer not found'}), 404
+    return render_template('cust_db.html', customer=customer)
+
+@app.route('/api/cust_db/<int:user_id>', methods=['GET'])
+def api_cust_db(user_id):
+    customer = Customer.query.filter_by(user_id=user_id).first()
+    if not customer:
+        return jsonify({'message': 'Customer not found'}), 404
+    customer_data = {
+        'id': customer.id,
+        'name': customer.name,
+        'email': customer.email,
+        'contact': customer.contact,
+        'location': customer.location,
+        'is_blocked': customer.is_blocked
+    }
+    return jsonify({'customer': customer_data}), 200
+
 
 # @app.route('/catalogue')
 # @login_required

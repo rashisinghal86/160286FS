@@ -66,24 +66,56 @@ export default {
       };
     },
     methods: {
-      updateProfile() {
-        // Implement API call to update profile
-        console.log("Updating profile...", this.customer);
-      },
-      deleteAccount() {
-        // Implement API call to delete account
-        console.log("Deleting account...");
-      }
+        async fetchUserData() {
+            const response = await fetch('/api/users');
+            if (response.ok) {
+                this.user = await response.json();
+            }
+        },
+      async updateProfile() {
+        const response = await fetch('/api/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: this.user.username,
+                name: this.user.name,
+                
+                cpassword: this.cpassword,
+                password: this.password,
+                email: this.customer.email,
+                contact: this.customer.contact,
+                location: this.customer.location
+            })
+        });
+        if (response.ok) {
+            alert('Profile updated successfully!');
+        } else {
+            alert('Failed to update profile');
+        }
     },
-    mounted() {
-      // Fetch user data from API if needed
-      this.user.username = "exampleUser"; // Replace with actual data
-      this.customer = {
-        email: "example@example.com",
-        name: "Example Name",
-        contact: "1234567890",
-        location: "Example City"
-      };
-    }
-  };
-  
+        async deleteAccount() {
+            if (!confirm("Are you sure you want to delete your account? This action is irreversible!")) {
+                return; // Stop if the user cancels
+            }
+
+            try {
+                const response = await fetch('/api/delete/cust', { method: 'DELETE' });
+                if (response.ok) {
+                    alert("Your account has been deleted.");
+                    window.location.href = '/home'; // Redirect to login page
+                }
+                else {
+                    alert("Failed to delete account. Please try again.");
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Something went wrong. Please try again.");
+            }
+        }
+        },
+        mounted() {
+            this.fetchUserData();
+        }
+    };
+
+

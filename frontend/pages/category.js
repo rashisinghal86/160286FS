@@ -32,16 +32,20 @@ export default {
                 <td>[[ category.id ]]</td>
                 <td>[[ category.name ]]</td>
                 <td>[[ category.services.length ]]</td>
-                <td>
-                  <button @click="showCategoryDetails(category.id)" class="btn btn-primary">
+              <td>
+                
+                  <button @click="get_services(category.id)" class="btn btn-primary">
                     <i class="fa-solid fa-magnifying-glass-plus"></i> Show Details
                   </button>
+                  
                   <button @click="openEditModal(category)" class="btn btn-warning">
                     <i class="fas fa-edit"></i> Edit Type
                   </button>
                   <button @click="deleteCategory(category.id)" class="btn btn-danger">
                     <i class="fa-regular fa-trash-can"></i> Delete Type
                   </button>
+                  
+                  <router-link :to="'/api/categories/' + category.id + '/services'">Go to Service Page</router-link>
                 </td>
               </tr>
             </tbody>
@@ -173,6 +177,24 @@ export default {
         this.editName = '';
       }
     },
+      async get_services(category_id) {
+        try {
+          const response = await fetch(`/api/category/${category_id}/services`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          if (response.ok) {
+            this.services = await response.json();
+          } else {
+            console.error('Failed to fetch services:', response.statusText);
+          }
+        } catch (error) {
+          console.error('Error:', error);
+        }
+      },
+    
   
     mounted() {
       this.fetchCategories();

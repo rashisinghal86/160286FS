@@ -61,7 +61,18 @@ export default {
                 console.log("Login Successful:", data);
                 window.alert(`Login Success: ${data.email}`);
                 this.$store.commit('setUser')
-                this.$router.push('/api/admin_db') 
+                if (data.customer.role == 'Customer') {
+                    this.$router.push('/cust_db');
+                    window.alert("Login Success",data.customer.role);
+                 }
+                // else if (data.professional.role == 'Professional') {
+                //     this.$router.push('/prof_db');
+                //     window.alert("Login Success");
+                //  }  
+                // else if (data.admin.role == 'Admin') {
+                //     this.$router.push('/api/admin_db');
+                //     window.alert("Login Success",data.admin.role);
+                //  }
             } catch (error) {
                 console.error("Login Error:", error);
                 window.alert("Login Failed. Please check your credentials.");

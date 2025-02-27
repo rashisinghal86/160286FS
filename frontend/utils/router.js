@@ -47,6 +47,8 @@ import verify_prof from '../pages/verify_prof.js';
 import view_appointments from '../pages/view_appointments.js'
 import profilewrapper from '../components/profilewrapper.js';
 import Category from '../pages/category.js';
+import service from '../pages/service.js';
+
 
 
 
@@ -99,6 +101,8 @@ const routes = [
     {path: '/view_appointments', component:view_appointments},
     { path: '/profile', component: profilewrapper },
     { path: '/categories', component: Category },
+    {path: '/service', component: service},
+    {path: '/api/categories/:id/services', component: service},
     
 
 
