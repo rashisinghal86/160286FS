@@ -43,7 +43,7 @@ export default {
                 </div>
                 <div class="schedule_datetime text-center p-3">
                   <form @submit.prevent="scheduleService(service.id, service.location)" class="form">
-                    <input v-model="selectedDatetime" type="datetime-local" class="form-control mb-2">
+                    <input v-model="bookingDateTime[service.id]" type="datetime-local" class="form-control mb-2">
                     <button type="submit" class="btn btn-success">Schedule Service</button>
                   </form>
                 </div>
@@ -64,7 +64,7 @@ export default {
         price: '',
         location: ''
       },
-      selectedDatetime: ''
+      bookingDateTime: {}
     };
   },
   
@@ -84,16 +84,22 @@ export default {
     },
     
     async scheduleService(serviceId, location) {
+      const datetime = this.bookingDateTime[serviceId];
+      if (!datetime) {
+        alert('Please select a date and time for booking.');
+        return;
+      }
+
       try {
         const response = await fetch(`/api/schedule/${serviceId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ datetime: this.selectedDatetime, location })
+          body: JSON.stringify({ datetime, location })
         });
         if (response.ok) {
           alert('Service scheduled successfully');
         } else {
-          console.error('Failed to schedule service:', response.statusText);
+          console.error('Failed to schedule service:');
         }
       } catch (error) {
         console.error('Error:', error);

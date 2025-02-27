@@ -2175,6 +2175,55 @@ def get_catalogue():
 #     return redirect(url_for('schedule'))
 
 
+@app.route('/add_to_schedule/<int:service_id>', methods=['POST'])
+@login_required
+def add_to_schedule(service_id):
+    service = Service.query.get(service_id)
+    if not service:
+        return jsonify({'error': 'Service does not exist'}), 404
+
+    data = request.get_json()
+    location = data.get('location')
+    schedule_datetime_str = data.get('schedule_datetime')
+
+    if not location:
+        return jsonify({'error': 'Please enter location'}), 400
+
+    if not schedule_datetime_str:
+        return jsonify({'error': 'Schedule date and time are required'}), 400
+
+    try:
+        schedule_datetime = datetime.strptime(schedule_datetime_str, '%Y-%m-%dT%H:%M')
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DDTHH:MM'}), 400
+
+    if schedule_datetime < datetime.now():
+        return jsonify({'error': 'Date & booking cannot be in the past'}), 400
+
+    # Check if a schedule already exists for this service at the same time
+    existing_schedule = Schedule.query.filter_by(service_id=service_id, schedule_datetime=schedule_datetime).first()
+    if existing_schedule:
+        return jsonify({'error': 'Service already scheduled at this time'}), 409
+
+    # Create a new schedule entry
+    new_schedule = Schedule(
+        customer_id=session.get('user_id'), 
+        service_id=service_id, 
+        schedule_datetime=schedule_datetime, 
+        location=location,
+        is_pending=True,
+        is_active=True,
+        is_accepted=False,
+        is_cancelled=False,
+        is_completed=False
+    )
+
+    db.session.add(new_schedule)
+    db.session.commit()
+
+    return jsonify({'message': 'Service added to schedule successfully', 'schedule_id': new_schedule.id}), 201
+
+
 
 
 
@@ -2208,7 +2257,43 @@ def get_catalogue():
 #     else:
 #         flash('You are not authorized to access this page')
 #         return redirect(url_for('home'))
-    
+@app.route('/api/schedule/<int:service_id>', methods=['POST'])
+@login_required
+def schedule_service(service_id):
+    user = User.query.get(session['user_id'])
+    role_id = user.role_id
+
+    if role_id != 3:  # Only customers can schedule services
+        return jsonify({'error': 'You are not authorized to schedule services'}), 403
+
+    data = request.get_json()
+    datetime_str = data.get('datetime')
+    location = 'location'  # data.get('location')
+
+    try:
+        schedule_datetime = datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M')
+    except ValueError:
+        return jsonify({'error': 'Invalid date format'}), 400
+
+    if schedule_datetime < datetime.now():
+        return jsonify({'error': 'Date & booking cannot be in the past'}), 400
+
+    schedule = Schedule(
+        service_id=service_id,
+        customer_id=user.id,
+        professional_id=None,
+        schedule_datetime=schedule_datetime,
+        location=location,
+        is_pending=True,
+        is_accepted=False,
+        is_cancelled=False,
+        is_completed=False
+    )
+
+    db.session.add(schedule)
+    db.session.commit()
+
+    return jsonify({'message': 'Service scheduled successfully'}), 201
 # @app.route('/schedule/<int:id>/edit')
 # @login_required
 # def edit_schedule(id):
@@ -2244,6 +2329,26 @@ def get_catalogue():
 #     flash('schedule updated')
 #     schedules = Schedule.query.filter_by(customer_id=session['user_id']).all()
 #     return render_template('schedule.html',schedule=schedule,schedules=schedules)
+@app.route('/api/schedule/<int:id>/edit', methods=['PUT'])
+@login_required
+def edit_schedule(id):
+    schedule = Schedule.query.get(id)
+    if not schedule:
+        return jsonify({'error': 'Schedule not found'}), 404
+
+    data = request.get_json()
+    schedule_datetime_str = data.get('schedule_datetime')
+    try:
+        schedule_datetime = datetime.strptime(schedule_datetime_str, '%Y-%m-%dT%H:%M')
+    except ValueError:
+        return jsonify({'error': 'Invalid date format'}), 400
+
+    if schedule_datetime < datetime.now():
+        return jsonify({'error': 'Date & booking cannot be in the past'}), 400
+
+    schedule.schedule_datetime = schedule_datetime
+    db.session.commit()
+    return jsonify({'message': 'Schedule updated successfully'}), 200
 
         
         
@@ -2281,6 +2386,29 @@ def get_catalogue():
 #     db.session.commit()
 #     flash('Schedule deleted successfully, Create new one')
 #     return redirect(url_for('schedule'))
+@app.route('/api/schedule/<int:id>/delete', methods=['DELETE'])
+@login_required
+def delete_schedule(id):
+    user = User.query.get(session['user_id'])
+    role_id = user.role_id
+    if role_id != 3:
+        return jsonify({'error': 'You are not authorized to access this page'}), 403
+
+    schedule = Schedule.query.get(id)
+    if schedule.customer_id != session['user_id']:
+        return jsonify({'error': 'You do not have permission to delete this schedule'}), 403
+    if schedule.is_accepted:
+        return jsonify({'error': 'You cannot delete an accepted schedule'}), 400
+    if schedule.is_cancelled:
+        return jsonify({'error': 'Schedule already cancelled'}), 400
+    if schedule.is_completed:
+        return jsonify({'error': 'Schedule already completed'}), 400
+
+    schedule.is_active = False
+    schedule.is_cancelled = True
+    db.session.delete(schedule)
+    db.session.commit()
+    return jsonify({'message': 'Schedule deleted successfully'}), 200
     
 
 # @app.route('/schedule/<int:id>/confirm', methods=['POST'])
@@ -2320,7 +2448,42 @@ def get_catalogue():
 #         flash('Schedule accepted successfully')
 #         # return redirect(url_for('pending_booking'))
 #         return render_template('prof_booking.html',transactions=Transaction.query.filter_by(professional_id=professional.id).all())
-                            
+@app.route('/api/schedule/<int:id>/confirm', methods=['POST'])
+@login_required
+def confirm_schedule(id):
+    user = User.query.get(session['user_id'])
+    role_id = user.role_id
+
+    if role_id == 2:
+        professional = Professional.query.filter_by(user_id=session['user_id']).first()
+        if not professional:
+            return jsonify({'error': 'Professional does not exist'}), 404
+
+        schedule = Schedule.query.get(id)
+        if not schedule or schedule.is_accepted:
+            return jsonify({'error': 'No pending schedule to accept'}), 400
+
+        transaction = Transaction(customer_id=schedule.customer_id, professional_id=professional.id, amount=0, datetime=datetime.now(), status='Accepted')
+        service = Service.query.get(schedule.service_id)
+        transaction.amount += float(service.price)
+
+        booking = Booking(
+            transaction=transaction,
+            service=schedule.service,
+            location=schedule.location,
+            date_of_completion=schedule.schedule_datetime.date(),
+            rating=None,
+            remarks=None
+        )
+        db.session.add(booking)
+        db.session.delete(schedule)
+        db.session.add(transaction)
+        db.session.commit()
+
+        return jsonify({'message': 'Schedule accepted successfully'}), 200
+
+    else:
+        return jsonify({'error': 'You are not authorized to access this page'}), 403                           
 # @app.route('/bookings')
 # @login_required
 # def bookings():
