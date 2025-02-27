@@ -2075,6 +2075,55 @@ def api_cust_db(user_id):
 #     if cname:
 #         categories = Category.query.filter(Category.name.ilike(f'%{cname}%')).all()
 #     return render_template('catalogue.html', categories=categories, cname=cname, sname=sname, price=price, location=location, datetime=datetime, description=description)
+@app.route('/api/catalogue', methods=['GET'])
+@login_required  # Uncomment if authentication is needed
+def get_catalogue():
+    """Fetch categories and services based on filters for the catalogue page."""
+    # Get query parameters
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized access"}), 401
+
+    cname = request.args.get('cname', '')
+    sname = request.args.get('sname', '')
+    price = request.args.get('price')
+    location = request.args.get('location', '')
+    datetime = request.args.get('datetime', '')
+    description = request.args.get('description', '')
+
+    query = Category.query
+
+    if cname:
+        query = query.filter(Category.name.ilike(f'%{cname}%'))
+    
+    try:
+        if price:
+            price = float(price)
+            if price <= 0:
+                return jsonify({"error": "Price cannot be negative"}), 400
+    except ValueError:
+        return jsonify({"error": "Invalid price"}), 400
+
+    categories = query.all()
+    
+    # Convert to JSON response
+    categories_data = [
+        {
+            "id": cat.id,
+            "name": cat.name,
+            "services": [
+                {
+                    "id": service.id,
+                    "name": service.name,
+                    "price": service.price,
+                    "description": service.description
+                }
+                for service in cat.services
+            ]
+        }
+        for cat in categories
+    ]
+
+    return jsonify({"categories": categories_data})
 
 # @app.route('/add_to_schedule/<int:service_id>', methods=['POST'])
 # @login_required
