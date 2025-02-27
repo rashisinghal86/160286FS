@@ -1,44 +1,30 @@
 export default {
-   template: `
-  <div>
-    <h1 class="display-1">
-      Hello
-      
-      
-    </h1>
-  </div>
-`
-
-
-    ,
+    template: `
+      <div class="container mt-4">
+        <h1 class="display-1">
+          Hello <span class="text-muted">@{{ service.name }}</span>
+        </h1>
+      </div>
+    `,
+    
     data() {
-        return {
-            email : null,
-            password : null,
-            output : null,
-        }
+      return {
+        service: {}
+      };
     },
- methods: { 
-     async submitlogin() {
-        // we should use try&catch block to handle errors 
-        const response = await fetch(location.origin+'/login', {
-             method: 'POST',
-             headers: {
-                 'Content-Type': 'application/json'
-             },
-             body: JSON.stringify({
-                 email: this.email,
-                 password: this.password
-             })
-         });
-         
-    if (response.ok) {
-        console.log('login success');
-        const data = await response.json();
-        this.output = data;
-        console.log(data);
-        window.alert(data.email);
+  
+    async mounted() {
+      // Fetch the service details from API (Update the endpoint accordingly)
+      try {
+        const response = await fetch('/api/service'); 
+        if (response.ok) {
+          this.service = await response.json();
+        } else {
+          console.error('Failed to fetch service:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
     }
-}
- }
-}  
+  };
+  

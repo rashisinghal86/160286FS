@@ -1,66 +1,89 @@
 export default {
-    template: `
-        <h1 class="display-1">  
+  template: `
+    <div class="container mt-4">
+      <h4 class="display-3">  
         <a href="/catalogue" class="btn btn-success">
-            <i class="fa-solid fa-book-open"></i>
-                <p class="card-text">view catalogue</p>
+          <i class="fa-solid fa-book-open"></i>
+          <p class="card-text">View Catalogue</p>
         </a>
-        Requested Schedule Details </h1>
-        
-        <hr>
-        
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Schedule</th>
-                    <th>Service</th>
-                    <th>Price</th>
-                    <th>Location</th>
-                    <th>Scheduled_date</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="schedule in schedules" :key="schedule.id">
-                    <td>{{ schedule.id }}</td>
-                    <td>{{ schedule.service.name }}</td>
-                    <td>{{ schedule.service.price }}</td>
-                    <td>{{ schedule.service.location }}</td>
-                    <td>{{ schedule.schedule_datetime }}</td>
-                    <td>
-                        <form :action="'/edit_schedule/' + schedule.id">
-                            <button class="btn btn-success">
-                                <i class="fas fa-check"></i>
-                                Edit Schedule
-                            </button>
-                        </form>
-                    </td>
-                    <td>
-                        <form :action="'/delete_schedule/' + schedule.id" method="post">
-                            <button class="btn btn-danger">
-                                <i class="fas fa-trash"></i>
-                                Delete Schedule
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <div v-if="schedules.length === 0" class="alert alert-warning">
-            <h4 class="alert-heading">No schedule found</h4>
-            <p>There is no schedule found in the database. Please add a schedule to proceed.</p>
-            <a href="/catalogue" class="btn btn-outline-primary"> Check catalogue to schedule services</a>
-        </div>
-    `,
-    data() {
-        return {
-            schedules: []
+        Requested Schedule Details
+      </h4>
+      <hr>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Schedule</th>
+            <th>Service</th>
+            <th>Price</th>
+            <th>Location</th>
+            <th>Scheduled Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="schedule in schedules" :key="schedule.id">
+            <td>{{ schedule.id }}</td>
+            <td>{{ schedule.service.name }}</td>
+            <td>{{ schedule.service.price }}</td>
+            <td>{{ schedule.location }}</td>
+            <td>{{ schedule.schedule_datetime }}</td>
+            <td>
+              <router-link :to="'/edit_schedule/' + schedule.id" class="btn btn-success">
+                <i class="fas fa-check"></i> Edit Schedule
+              </router-link>
+            </td>
+            <td>
+              <button @click="deleteSchedule(schedule.id)" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Delete Schedule
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="schedules.length === 0" class="alert alert-warning">
+        <h4 class="alert-heading">No schedule found</h4>
+        <p>There is no schedule found in the database. Please add a schedule to proceed.</p>
+        <a href="/catalogue" class="btn btn-outline-primary">Check Catalogue to Schedule Services</a>
+      </div>
+    </div>
+  `,
+  data() {
+    return {
+      schedules: []
+    };
+  },
+  methods: {
+    async fetchSchedules() {
+      try {
+        const response = await fetch('/api/schedules');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Fetched schedules:', data);  // Debugging log
+          this.schedules = data;
+        } else {
+          console.error('Failed to fetch schedules:', response.statusText);
         }
+      } catch (error) {
+        console.error('Error fetching schedules:', error);
+      }
     },
-    mounted() {
-        fetch('/api/schedules')
-            .then(response => response.json())
-            .then(data => this.schedules = data);
+    async deleteSchedule(scheduleId) {
+      try {
+        const response = await fetch(`/api/schedule/${scheduleId}`, {
+          method: 'DELETE'
+        });
+        if (response.ok) {
+          alert('Schedule deleted successfully');
+          this.fetchSchedules();  // Refresh the list of schedules
+        } else {
+          console.error('Failed to delete schedule:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error deleting schedule:', error);
+      }
     }
-}
+  },
+  mounted() {
+    this.fetchSchedules();
+  }
+};

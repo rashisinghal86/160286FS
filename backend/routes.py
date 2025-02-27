@@ -2230,6 +2230,40 @@ def add_to_schedule(service_id):
 
 
 # # ------------------------backend.routes from cust_db--------------------
+@app.route('/api/schedules', methods=['GET'])
+@login_required
+def get_schedules():
+    user = User.query.get(session['user_id'])
+    role_id = user.role_id
+
+    if role_id == 2:  # Professional
+        professional = Professional.query.filter_by(user_id=session['user_id']).first()
+        if not professional:
+            return jsonify({'error': 'Professional does not exist'}), 404
+
+        schedules = Schedule.query.join(Service).join(Category).filter(Category.name == professional.service_type).all()
+    elif role_id == 3:  # Customer
+        customer = Customer.query.filter_by(user_id=session['user_id']).first()
+        if not customer:
+            return jsonify({'error': 'Customer does not exist'}), 404
+
+        schedules = Schedule.query.filter_by(customer_id=session['user_id']).all()
+    else:
+        return jsonify({'error': 'You are not authorized to access this page'}), 403
+
+    schedules_data = [
+        {
+            'id': schedule.id,
+            'service': {
+                'name': schedule.service.name,
+                'price': schedule.service.price
+            },
+            'location': schedule.location,
+            'schedule_datetime': schedule.schedule_datetime
+        }
+        for schedule in schedules
+    ]
+    return jsonify(schedules_data), 200
 # @app.route('/schedule')
 # @login_required
 # def schedule():

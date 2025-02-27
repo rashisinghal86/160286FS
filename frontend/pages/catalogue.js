@@ -44,7 +44,7 @@ export default {
                 <div class="schedule_datetime text-center p-3">
                   <form @submit.prevent="scheduleService(service.id, service.location)" class="form">
                     <input v-model="bookingDateTime[service.id]" type="datetime-local" class="form-control mb-2">
-                    <button type="submit" class="btn btn-success">Schedule Service</button>
+                    <button type="submit" class="btn btn-success">Proceed To Schedule Service</button>
                   </form>
                 </div>
               </div>
@@ -98,8 +98,9 @@ export default {
         });
         if (response.ok) {
           alert('Service scheduled successfully');
+          this.$router.push('/schedule');
         } else {
-          console.error('Failed to schedule service:');
+          console.error('Failed to schedule service:', response.statusText);
         }
       } catch (error) {
         console.error('Error:', error);
