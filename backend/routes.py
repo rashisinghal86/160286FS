@@ -136,7 +136,17 @@ def login():
                 if professional.is_verified:
                     return jsonify({'message': 'Professional login successful', 'redirect_url': url_for('prof_db', username=professional.user.username)}), 200
                 else:
-                    return jsonify({'message': 'Professional not verified', 'redirect_url': url_for('verify_prof', professional_id=professional.id)}), 403
+                    return jsonify({
+                    "message": "Login successful!",
+                    "professional": {
+                        "id": professional.user_id,
+                        "name": professional.name,
+                        "email": professional.email,
+                        "role": "Professional"  # Directly access the first role
+
+                    },
+                    "authentication_token": user.get_auth_token()  # Generate and return token
+                }), 200
 
             elif role.name == 'Customer':
                 customer = Customer.query.filter_by(user_id=user.id).first()
