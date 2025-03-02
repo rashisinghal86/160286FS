@@ -79,9 +79,9 @@ export default {
             body: JSON.stringify({
                 username: this.user.username,
                 name: this.user.name,
-                
                 cpassword: this.cpassword,
                 password: this.password,
+                
                 email: this.customer.email,
                 contact: this.customer.contact,
                 location: this.customer.location
