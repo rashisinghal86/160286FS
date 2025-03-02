@@ -58,7 +58,7 @@ export default {
                 <input type="text" v-model="professional.location" id="location" class="form-control">
               </div>
               <div class="form-group">
-                <label for="service_type" class="form-label">Service Type (For Reference only)</label>
+                <label for="service_type" class="form-label">Service Type</label>
                 <input type="text" v-model="professional.service_type" id="service_type" class="form-control">
               </div>
               <br>

@@ -16,18 +16,16 @@ export default {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="schedule in schedules" :key="schedule.id" v-if="schedule.is_active || schedule.is_pending">
+                    <tr v-for="schedule in schedules" :key="schedule.id">
                         <td>{{ schedule.id }}</td>
                         <td>{{ schedule.service.name }}</td>
                         <td>{{ schedule.service.price }}</td>
                         <td>{{ schedule.location }}</td>
                         <td>{{ schedule.schedule_datetime }}</td>
                         <td>
-                            <form @submit.prevent="confirmSchedule(schedule.id)">
-                                <button class="btn btn-success">
-                                    <i class="fas fa-check"></i> Accept
-                                </button>
-                            </form>
+                        <button class="btn btn-success" @click="confirmSchedule(schedule.id)">
+                            <i class="fas fa-check"></i> Accept
+                        </button>
                         </td>
                     </tr>
                 </tbody>
@@ -59,20 +57,24 @@ export default {
         },
         async confirmSchedule(id) {
             try {
-                const response = await fetch(`/confirm/${id}`, {
+                const response = await fetch(`/api/schedule/confirm/${id}`, { // Fixed dynamic URL
                     method: 'POST'
                 });
-                if (response.ok) {
-                    alert("Schedule confirmed successfully!");
-                    this.fetchSchedules(); // Refresh data after confirmation
-                } else {
-                    console.error("Failed to confirm schedule");
+        
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || "Failed to confirm schedule");
                 }
+        
+                alert("Schedule confirmed successfully!");
+                this.fetchSchedules();
+                this.$router.push('/booking');  // Refresh data after confirmation
             } catch (error) {
                 console.error("Error confirming schedule:", error);
+                alert(error.message);
             }
         }
-    },
+    },        
     mounted() {
         this.fetchSchedules();
     }

@@ -1333,7 +1333,7 @@ def delete_user():
 @login_required
 def profile():
     user = User.query.get(session.get('user_id'))
-    print("User ID in session:", session.get('user_id'))
+    # print("User ID in session:", session.get('user_id'))
     if not user:
         return jsonify({"message": "User not found"}), 404
     
@@ -1519,13 +1519,13 @@ def profile_post():
         return jsonify({'error': 'Role not found'}), 404
 
     data = request.json  # Extract JSON data from the request
-    print(data)
+    # print(data)
     # Extract common fields
     username = data.get('username')
     cpassword = data.get('cpassword')
     password = data.get('password')
 
-    print(username, cpassword, password)
+    # print(username, cpassword, password)
 
     if not username or not cpassword or not password:
         return jsonify({'error': 'Please fill out all required fields'}), 400
@@ -1564,6 +1564,7 @@ def profile_post():
         professional.location = data.get('location', professional.location)
         professional.experience = data.get('experience', professional.experience)
         user.name = professional.name
+        professional.service_type = data.get('service_type', professional.service_type)
 
     elif role.name == 'Customer':
         customer = Customer.query.filter_by(user_id=user.id).first()
@@ -2492,7 +2493,7 @@ def delete_schedule(id):
 #         flash('Schedule accepted successfully')
 #         # return redirect(url_for('pending_booking'))
 #         return render_template('prof_booking.html',transactions=Transaction.query.filter_by(professional_id=professional.id).all())
-@app.route('/api/schedule/<int:id>/confirm', methods=['POST'])
+@app.route('/api/schedule/confirm/<int:id>', methods=['POST'])
 @login_required
 def confirm_schedule(id):
     user = User.query.get(session['user_id'])
@@ -2560,7 +2561,45 @@ def confirm_schedule(id):
 #         return render_template('admin_booking.html', bookings=bookings, schedules=schedules, transactions=transactions, customers=customers, professionals=professionals,users=users, pending_professionals=pending_professionals, blocked_professionals=blocked_professionals)
 #     else:
 #         flash('You are not authorized to access this page')
-#         return redirect(url_for('home'))    
+#         return redirect(url_for('home')) 
+# from flask import Flask, jsonify, session
+
+
+@app.route('/api/bookings', methods=['GET'])
+def api_bookings():
+    user = User.query.get(session.get('user_id'))
+    if not user:
+        return jsonify({'error': 'User not authenticated'}), 401
+
+    role_id = user.role_id
+
+    if role_id == 3:  # Customer
+        transactions = Transaction.query.filter_by(customer_id=user.id).order_by(Transaction.datetime.desc()).all()
+        return jsonify({'transactions': [t.to_dict() for t in transactions]})
+
+    elif role_id == 2:  # Professional
+        professional = Professional.query.filter_by(user_id=user.id).first()
+        if not professional:
+            return jsonify({'error': 'Professional does not exist'}), 404
+        
+        transactions = Transaction.query.filter_by(professional_id=professional.id).order_by(Transaction.datetime.desc()).all()
+        return jsonify({'transactions': [t.to_dict() for t in transactions]})
+
+    elif role_id == 1:  # Admin
+        data = {
+            'bookings': [b.to_dict() for b in Booking.query.all()],
+            'schedules': [s.to_dict() for s in Schedule.query.all()],
+            'transactions': [t.to_dict() for t in Transaction.query.all()],
+            'customers': [c.to_dict() for c in Customer.query.all()],
+            'professionals': [p.to_dict() for p in Professional.query.all()],
+            'users': [u.to_dict() for u in User.query.all()],
+            'pending_professionals': [p.to_dict() for p in Professional.query.filter_by(is_verified=False, is_flagged=False).all()],
+            'blocked_professionals': [p.to_dict() for p in Professional.query.filter_by(is_flagged=True).all()],
+        }
+        return jsonify(data)
+
+    return jsonify({'error': 'Unauthorized access'}), 403
+   
 
 # @app.route('/booking/<int:id>/delete', methods=['POST'])
 # @login_required
@@ -2588,6 +2627,38 @@ def confirm_schedule(id):
 
 #     flash('Booking cancelled successfully')
 #     return redirect(url_for('bookings'))
+
+@app.route('/api/bookings/<int:id>', methods=['DELETE'])
+@login_required
+def delete_booking(id):
+    """API to cancel a booking if the user is authorized"""
+    user = User.query.get(session['user_id'])
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    if user.role_id != 3:
+        return jsonify({'error': 'Unauthorized access'}), 403
+    
+    booking = Booking.query.get(id)
+    
+    if not booking:
+        return jsonify({'error': 'Booking not found'}), 404
+    
+    if booking.transaction.customer_id != session['user_id']:
+        return jsonify({'error': 'You do not have permission to delete this booking'}), 403
+    
+    if booking.transaction.status in ['Accepted', 'Completed']:
+        return jsonify({'error': f'Cannot delete a {booking.transaction.status.lower()} booking'}), 400
+    
+    if booking.transaction.status == 'Cancelled':
+        return jsonify({'message': 'Booking already cancelled'}), 200
+
+    # Cancel the booking
+    booking.transaction.status = 'Cancelled'
+    db.session.commit()
+
+    return jsonify({'message': 'Booking cancelled successfully'}), 200
 
 
 # @app.route('/booking/<int:id>/complete', methods=['POST'])
@@ -2617,6 +2688,33 @@ def confirm_schedule(id):
 #     flash('Booking completed successfully')
     
 #     return redirect(url_for('bookings'))
+
+@app.route('/api/booking/<int:id>/complete', methods=['POST'])
+def api_complete_booking():
+    user = User.query.get(session.get('user_id'))
+    if not user:
+        return jsonify({'error': 'User not authenticated'}), 401
+
+    if user.role_id != 3:  # Only customers can complete a booking
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    booking = Booking.query.get(id)
+    if not booking:
+        return jsonify({'error': 'Booking not found'}), 404
+
+    if booking.transaction.customer_id != user.id:
+        return jsonify({'error': 'You do not have permission to complete this booking'}), 403
+
+    if booking.transaction.status in ['Cancelled', 'Completed']:
+        return jsonify({'error': f'Booking already {booking.transaction.status.lower()}'}), 400
+
+    # Mark booking as completed
+    booking.transaction.date_of_completion = datetime.now()
+    booking.transaction.status = 'Completed'
+    db.session.commit()
+
+    return jsonify({'message': 'Booking completed successfully'}), 200
+
 
 
 # @app.route('/booking/<int:id>/rate', methods=['POST'])
@@ -2651,6 +2749,49 @@ def confirm_schedule(id):
 #     flash('Booking rated successfully')
 #     return redirect(url_for('bookings'))
 
+@app.route('/api/booking/<int:id>/rate', methods=['POST'])
+def api_rate_booking(id):
+    user = User.query.get(session.get('user_id'))
+    if not user:
+        return jsonify({'error': 'User not authenticated'}), 401
+
+    if user.role_id != 3:  # Only customers can rate a booking
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    booking = Booking.query.get(id)
+    if not booking:
+        return jsonify({'error': 'Booking not found'}), 404
+
+    transaction = Transaction.query.get(booking.transaction_id)
+    if not transaction:
+        return jsonify({'error': 'Transaction not found'}), 404
+
+    if transaction.customer_id != user.id:
+        return jsonify({'error': 'You do not have permission to rate this booking'}), 403
+
+    if transaction.status != 'Completed':
+        return jsonify({'error': 'You cannot rate a booking that is not completed'}), 400
+
+    data = request.get_json()
+    rating = data.get('rating')
+    remarks = data.get('remarks')
+
+    if rating is None or remarks is None:
+        return jsonify({'error': 'Please provide both rating and remarks'}), 400
+
+    try:
+        rating = int(rating)
+        if rating < 1 or rating > 5:
+            return jsonify({'error': 'Rating must be between 1 and 5'}), 400
+    except ValueError:
+        return jsonify({'error': 'Invalid rating format'}), 400
+
+    booking.rating = rating
+    booking.remarks = remarks
+    db.session.commit()
+
+    return jsonify({'message': 'Booking rated successfully'}), 200
+
 
 # #-----------------professional pages-----------------------------------
     
@@ -2666,6 +2807,40 @@ def confirm_schedule(id):
     
 #     schedules = Schedule.query.join(Service).join(Category).filter(Category.name == professional.service_type).all()
 #     return render_template('view_appointments.html', schedules=schedules)
+# GET REQUESTED SCHEDULES
+
+@app.route('/api/pending_booking', methods=['GET'])
+@login_required
+def api_pending_booking():
+    """Fetch all pending bookings for the logged-in professional."""
+    professional = Professional.query.filter_by(user_id=session['user_id']).first()
+    
+    if not professional:
+        return jsonify({'error': 'Professional does not exist'}), 404
+    
+    schedules = Schedule.query.join(Service).join(Category).filter(
+        Service.category.has(name=professional.service_type),  # Corrected category mapping
+        Schedule.is_pending == True
+    ).all()
+    
+    # Convert schedules to JSON format
+    result = [
+        {
+            'id': schedule.id,
+            'customer_id': schedule.customer_id,
+            'service_name': schedule.service.name,
+            'category': schedule.service.category.name,
+            'location': schedule.location,
+            'schedule_datetime': schedule.schedule_datetime.isoformat(),
+            'is_accepted': schedule.is_accepted,
+            'is_pending': schedule.is_pending,
+            'is_cancelled': schedule.is_cancelled,
+            'is_completed': schedule.is_completed
+        }
+        for schedule in schedules
+    ]
+    
+    return jsonify({'pending_booking': result}), 200
 
 
 # # route for accept appointment
@@ -2693,6 +2868,45 @@ def confirm_schedule(id):
 #     db.session.delete(schedule)
 #     #delete from prof table
 #     flash('Schedule accepted successfully')
+@app.route('/api/accept_appointment/<int:id>', methods=['POST']) 
+@login_required
+def api_accept_appointment(id):
+    """Accept a pending appointment."""
+    schedule = Schedule.query.get(id)
+    
+    if not schedule:
+        return jsonify({'error': 'Schedule does not exist'}), 404
+    
+    if schedule.is_accepted:
+        return jsonify({'error': 'Schedule already accepted'}), 400
+    
+    if schedule.is_cancelled:
+        return jsonify({'error': 'Schedule already cancelled'}), 400
+    
+    if schedule.is_completed:
+        return jsonify({'error': 'Schedule already completed'}), 400
+    
+    if schedule.professional_id is not None:
+        return jsonify({'error': 'Schedule already assigned to a professional'}), 400
+
+    professional = Professional.query.filter_by(user_id=session['user_id']).first()
+    
+    if not professional:
+        return jsonify({'error': 'Professional does not exist'}), 404
+
+    # Ensure professional is accepting only relevant service types
+    if schedule.service.category != professional.service_type:
+        return jsonify({'error': 'You can only accept schedules related to your service type'}), 403
+
+    # Assign professional to schedule and update status
+    schedule.professional_id = professional.id
+    schedule.is_accepted = True
+    schedule.is_pending = False
+
+    db.session.commit()
+
+    return jsonify({'message': 'Schedule accepted successfully'}), 200
+
 
 # # ----------------admin page route to fetch all bookings by customers-------------------
 # @app.route('/admin/bookings')
