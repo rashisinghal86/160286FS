@@ -33,7 +33,7 @@ export default {
               { title: 'My Profile', link: '/profile', icon: 'fa-solid fa-id-card fa-4x', seed: 'Profile', text: 'Edit Profile | Change Password' },
               { title: 'Catalogue', link: '/catalogue', icon: 'fa fa-book fa-5x', seed: 'Catalogue', text: 'Click here to view catalogue of services' },
               { title: 'View My Schedules', link: '/schedule', icon: 'fa-brands fa-buffer fa-5x', seed: 'Schedules', text: 'Take a look at your requested services' },
-              { title: 'View My Bookings', link: '/bookings', icon: 'fa-solid fa-user-tie fa-5x', seed: 'Bookings', text: 'Take a look at your confirmed booking' }
+              { title: 'View My Bookings', link: '/cust_bookings', icon: 'fa-solid fa-user-tie fa-5x', seed: 'Bookings', text: 'Take a look at your confirmed booking' }
           ]
       }
   },

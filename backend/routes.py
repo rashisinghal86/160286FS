@@ -2493,42 +2493,7 @@ def delete_schedule(id):
 #         flash('Schedule accepted successfully')
 #         # return redirect(url_for('pending_booking'))
 #         return render_template('prof_booking.html',transactions=Transaction.query.filter_by(professional_id=professional.id).all())
-@app.route('/api/schedule/confirm/<int:id>', methods=['POST'])
-@login_required
-def confirm_schedule(id):
-    user = User.query.get(session['user_id'])
-    role_id = user.role_id
 
-    if role_id == 2:
-        professional = Professional.query.filter_by(user_id=session['user_id']).first()
-        if not professional:
-            return jsonify({'error': 'Professional does not exist'}), 404
-
-        schedule = Schedule.query.get(id)
-        if not schedule or schedule.is_accepted:
-            return jsonify({'error': 'No pending schedule to accept'}), 400
-
-        transaction = Transaction(customer_id=schedule.customer_id, professional_id=professional.id, amount=0, datetime=datetime.now(), status='Accepted')
-        service = Service.query.get(schedule.service_id)
-        transaction.amount += float(service.price)
-
-        booking = Booking(
-            transaction=transaction,
-            service=schedule.service,
-            location=schedule.location,
-            date_of_completion=schedule.schedule_datetime.date(),
-            rating=None,
-            remarks=None
-        )
-        db.session.add(booking)
-        db.session.delete(schedule)
-        db.session.add(transaction)
-        db.session.commit()
-
-        return jsonify({'message': 'Schedule accepted successfully'}), 200
-
-    else:
-        return jsonify({'error': 'You are not authorized to access this page'}), 403                           
 # @app.route('/bookings')
 # @login_required
 # def bookings():
@@ -2563,43 +2528,268 @@ def confirm_schedule(id):
 #         flash('You are not authorized to access this page')
 #         return redirect(url_for('home')) 
 # from flask import Flask, jsonify, session
-
-
 @app.route('/api/bookings', methods=['GET'])
+@login_required
 def api_bookings():
-    user = User.query.get(session.get('user_id'))
-    if not user:
-        return jsonify({'error': 'User not authenticated'}), 401
-
+    user = User.query.get(session['user_id'])
     role_id = user.role_id
 
     if role_id == 3:  # Customer
-        transactions = Transaction.query.filter_by(customer_id=user.id).order_by(Transaction.datetime.desc()).all()
-        return jsonify({'transactions': [t.to_dict() for t in transactions]})
+        cust_transactions = Transaction.query.filter_by(customer_id=session['user_id']).order_by(Transaction.datetime.desc()).all()
+        transactions_data = [
+            {
+                'id': transaction.id,
+                'datetime': transaction.datetime,
+                'amount': transaction.amount,
+                'status': transaction.status,
+                'bookings': [
+                    {
+                        'id': booking.id,
+                        'service': {
+                            'name': booking.service.name
+                        },
+                        'date_of_completion': booking.date_of_completion,
+                        'location': booking.location,
+                        'rating': booking.rating,
+                        'remarks': booking.remarks
+                    }
+                    for booking in transaction.bookings
+                ]
+            }
+            for transaction in cust_transactions
+        ]
+        return jsonify({'transactions': transactions_data}), 200
 
     elif role_id == 2:  # Professional
-        professional = Professional.query.filter_by(user_id=user.id).first()
+        professional = Professional.query.filter_by(user_id=session['user_id']).first()
         if not professional:
             return jsonify({'error': 'Professional does not exist'}), 404
         
-        transactions = Transaction.query.filter_by(professional_id=professional.id).order_by(Transaction.datetime.desc()).all()
-        return jsonify({'transactions': [t.to_dict() for t in transactions]})
+        prof_transactions = Transaction.query.filter_by(professional_id=professional.id).order_by(Transaction.datetime.desc()).all()
+        transactions_data = [
+            {
+                'id': transaction.id,
+                'datetime': transaction.datetime,
+                'amount': transaction.amount,
+                'status': transaction.status,
+                'bookings': [
+                    {
+                        'id': booking.id,
+                        'service': {
+                            'name': booking.service.name
+                        },
+                        'date_of_completion': booking.date_of_completion,
+                        'location': booking.location,
+                        'rating': booking.rating,
+                        'remarks': booking.remarks
+                    }
+                    for booking in transaction.bookings
+                ]
+            }
+            for transaction in prof_transactions
+        ]
+        return jsonify({'transactions': transactions_data}), 200
 
     elif role_id == 1:  # Admin
+        transactions = Transaction.query.all()
+        users = User.query.all()
+        schedules = Schedule.query.all()
+        bookings = Booking.query.all()
+        customers = Customer.query.all()
+        professionals = Professional.query.all()
+        pending_professionals = Professional.query.filter_by(is_verified=False, is_flagged=False).all()
+        blocked_professionals = Professional.query.filter_by(is_flagged=True).all()
+        
         data = {
-            'bookings': [b.to_dict() for b in Booking.query.all()],
-            'schedules': [s.to_dict() for s in Schedule.query.all()],
-            'transactions': [t.to_dict() for t in Transaction.query.all()],
-            'customers': [c.to_dict() for c in Customer.query.all()],
-            'professionals': [p.to_dict() for p in Professional.query.all()],
-            'users': [u.to_dict() for u in User.query.all()],
-            'pending_professionals': [p.to_dict() for p in Professional.query.filter_by(is_verified=False, is_flagged=False).all()],
-            'blocked_professionals': [p.to_dict() for p in Professional.query.filter_by(is_flagged=True).all()],
+            'transactions': [
+                {
+                    'id': transaction.id,
+                    'datetime': transaction.datetime,
+                    'amount': transaction.amount,
+                    'status': transaction.status,
+                    'customer_id': transaction.customer_id,
+                    'professional_id': transaction.professional_id,
+                    'bookings': [
+                        {
+                            'id': booking.id,
+                            'service': {
+                                'name': booking.service.name
+                            },
+                            'date_of_completion': booking.date_of_completion,
+                            'location': booking.location,
+                            'rating': booking.rating,
+                            'remarks': booking.remarks
+                        }
+                        for booking in transaction.bookings
+                    ]
+                }
+                for transaction in transactions
+            ],
+            'users': [
+                {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'role': Role.query.get(user.role_id).name if user.role_id else None
+                }
+                for user in users
+            ],
+            'schedules': [
+                {
+                    'id': schedule.id,
+                    'service_name': schedule.service.name,
+                    'schedule_datetime': schedule.schedule_datetime,
+                    'location': schedule.location,
+                    'is_pending': schedule.is_pending,
+                    'is_accepted': schedule.is_accepted,
+                    'is_cancelled': schedule.is_cancelled,
+                    'is_completed': schedule.is_completed
+                }
+                for schedule in schedules
+            ],
+            'bookings': [
+                {
+                    'id': booking.id,
+                    'transaction_id': booking.transaction_id,
+                    'service_name': booking.service.name,
+                    'location': booking.location,
+                    'date_of_completion': booking.date_of_completion,
+                    'rating': booking.rating,
+                    'remarks': booking.remarks
+                }
+                for booking in bookings
+            ],
+            'customers': [
+                {
+                    'id': customer.id,
+                    'name': customer.name,
+                    'email': customer.email,
+                    'contact': customer.contact,
+                    'location': customer.location,
+                    'is_blocked': customer.is_blocked
+                }
+                for customer in customers
+            ],
+            'professionals': [
+                {
+                    'id': professional.id,
+                    'name': professional.name,
+                    'email': professional.email,
+                    'contact': professional.contact,
+                    'service_type': professional.service_type,
+                    'experience': professional.experience,
+                    'location': professional.location,
+                    'is_verified': professional.is_verified,
+                    'is_flagged': professional.is_flagged
+                }
+                for professional in professionals
+            ],
+            'pending_professionals': [
+                {
+                    'id': professional.id,
+                    'name': professional.name,
+                    'email': professional.email,
+                    'contact': professional.contact,
+                    'service_type': professional.service_type,
+                    'experience': professional.experience,
+                    'location': professional.location
+                }
+                for professional in pending_professionals
+            ],
+            'blocked_professionals': [
+                {
+                    'id': professional.id,
+                    'name': professional.name,
+                    'email': professional.email,
+                    'contact': professional.contact,
+                    'service_type': professional.service_type,
+                    'experience': professional.experience,
+                    'location': professional.location
+                }
+                for professional in blocked_professionals
+            ]
         }
-        return jsonify(data)
+        return jsonify(data), 200
 
-    return jsonify({'error': 'Unauthorized access'}), 403
-   
+    else:
+        return jsonify({'error': 'You are not authorized to access this page'}), 403
+
+
+@app.route('/api/booking/<int:id>/delete', methods=['POST'])
+@login_required
+def api_delete_booking(id):
+    user = User.query.get(session['user_id'])
+    role_id = user.role_id
+    if role_id != 3:
+        return jsonify({'error': 'You are not authorized to access this page'}), 403
+
+    booking = Booking.query.get(id)
+    if booking.transaction.customer_id != session['user_id']:
+        return jsonify({'error': 'You do not have permission to delete this booking'}), 403
+    if booking.transaction.status == 'Accepted':
+        return jsonify({'error': 'You cannot delete an accepted booking'}), 400
+    if booking.transaction.status == 'Cancelled':
+        return jsonify({'error': 'Booking already cancelled'}), 400
+    if booking.transaction.status == 'Completed':
+        return jsonify({'error': 'Booking already completed'}), 400
+
+    booking.transaction.status = 'Cancelled'
+    db.session.commit()
+
+    return jsonify({'message': 'Booking cancelled successfully'}), 200
+
+
+@app.route('/api/booking/complete/<int:id>', methods=['POST'])
+@login_required
+def api_complete_booking(id):
+    user = User.query.get(session['user_id'])
+    role_id = user.role_id
+    if role_id != 3:
+        return jsonify({'error': 'You are not authorized to access this page'}), 403
+
+    booking = Booking.query.get(id)
+    if booking.transaction.customer_id != session['user_id']:
+        return jsonify({'error': 'You do not have permission to complete this booking'}), 403
+    if booking.transaction.status == 'Cancelled':
+        return jsonify({'error': 'Booking already cancelled'}), 400
+    if booking.transaction.status == 'Completed':
+        return jsonify({'error': 'Booking already completed'}), 400
+
+    booking.transaction.date_of_completion = datetime.now()
+    booking.transaction.status = 'Completed'
+    db.session.commit()
+
+    return jsonify({'message': 'Booking completed successfully'}), 200
+
+
+@app.route('/api/booking/rate/<int:id>', methods=['POST'])
+@login_required
+def api_rate_booking(id):
+    user = User.query.get(session['user_id'])
+    role_id = user.role_id
+    if role_id != 3:
+        return jsonify({'error': 'You are not authorized to access this page'}), 403
+
+    booking = Booking.query.get(id)
+    transaction = Transaction.query.get(booking.transaction_id)
+    if transaction.customer_id != session['user_id']:
+        return jsonify({'error': 'You do not have permission to rate this booking'}), 403
+    if transaction.status != 'Completed':
+        return jsonify({'error': 'You cannot rate a booking that is not completed'}), 400
+
+    data = request.get_json()
+    rating = data.get('rating')
+    remarks = data.get('remarks')
+    if not rating or not remarks:
+        return jsonify({'error': 'Please fill out the fields'}), 400
+
+    booking.rating = int(rating)
+    booking.remarks = remarks
+    db.session.commit()
+
+    return jsonify({'message': 'Booking rated successfully'}), 200
+
+
 
 # @app.route('/booking/<int:id>/delete', methods=['POST'])
 # @login_required
@@ -2628,37 +2818,6 @@ def api_bookings():
 #     flash('Booking cancelled successfully')
 #     return redirect(url_for('bookings'))
 
-@app.route('/api/bookings/<int:id>', methods=['DELETE'])
-@login_required
-def delete_booking(id):
-    """API to cancel a booking if the user is authorized"""
-    user = User.query.get(session['user_id'])
-    
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-    
-    if user.role_id != 3:
-        return jsonify({'error': 'Unauthorized access'}), 403
-    
-    booking = Booking.query.get(id)
-    
-    if not booking:
-        return jsonify({'error': 'Booking not found'}), 404
-    
-    if booking.transaction.customer_id != session['user_id']:
-        return jsonify({'error': 'You do not have permission to delete this booking'}), 403
-    
-    if booking.transaction.status in ['Accepted', 'Completed']:
-        return jsonify({'error': f'Cannot delete a {booking.transaction.status.lower()} booking'}), 400
-    
-    if booking.transaction.status == 'Cancelled':
-        return jsonify({'message': 'Booking already cancelled'}), 200
-
-    # Cancel the booking
-    booking.transaction.status = 'Cancelled'
-    db.session.commit()
-
-    return jsonify({'message': 'Booking cancelled successfully'}), 200
 
 
 # @app.route('/booking/<int:id>/complete', methods=['POST'])
@@ -2689,31 +2848,6 @@ def delete_booking(id):
     
 #     return redirect(url_for('bookings'))
 
-@app.route('/api/booking/<int:id>/complete', methods=['POST'])
-def api_complete_booking():
-    user = User.query.get(session.get('user_id'))
-    if not user:
-        return jsonify({'error': 'User not authenticated'}), 401
-
-    if user.role_id != 3:  # Only customers can complete a booking
-        return jsonify({'error': 'Unauthorized access'}), 403
-
-    booking = Booking.query.get(id)
-    if not booking:
-        return jsonify({'error': 'Booking not found'}), 404
-
-    if booking.transaction.customer_id != user.id:
-        return jsonify({'error': 'You do not have permission to complete this booking'}), 403
-
-    if booking.transaction.status in ['Cancelled', 'Completed']:
-        return jsonify({'error': f'Booking already {booking.transaction.status.lower()}'}), 400
-
-    # Mark booking as completed
-    booking.transaction.date_of_completion = datetime.now()
-    booking.transaction.status = 'Completed'
-    db.session.commit()
-
-    return jsonify({'message': 'Booking completed successfully'}), 200
 
 
 
@@ -2749,48 +2883,6 @@ def api_complete_booking():
 #     flash('Booking rated successfully')
 #     return redirect(url_for('bookings'))
 
-@app.route('/api/booking/<int:id>/rate', methods=['POST'])
-def api_rate_booking(id):
-    user = User.query.get(session.get('user_id'))
-    if not user:
-        return jsonify({'error': 'User not authenticated'}), 401
-
-    if user.role_id != 3:  # Only customers can rate a booking
-        return jsonify({'error': 'Unauthorized access'}), 403
-
-    booking = Booking.query.get(id)
-    if not booking:
-        return jsonify({'error': 'Booking not found'}), 404
-
-    transaction = Transaction.query.get(booking.transaction_id)
-    if not transaction:
-        return jsonify({'error': 'Transaction not found'}), 404
-
-    if transaction.customer_id != user.id:
-        return jsonify({'error': 'You do not have permission to rate this booking'}), 403
-
-    if transaction.status != 'Completed':
-        return jsonify({'error': 'You cannot rate a booking that is not completed'}), 400
-
-    data = request.get_json()
-    rating = data.get('rating')
-    remarks = data.get('remarks')
-
-    if rating is None or remarks is None:
-        return jsonify({'error': 'Please provide both rating and remarks'}), 400
-
-    try:
-        rating = int(rating)
-        if rating < 1 or rating > 5:
-            return jsonify({'error': 'Rating must be between 1 and 5'}), 400
-    except ValueError:
-        return jsonify({'error': 'Invalid rating format'}), 400
-
-    booking.rating = rating
-    booking.remarks = remarks
-    db.session.commit()
-
-    return jsonify({'message': 'Booking rated successfully'}), 200
 
 
 # #-----------------professional pages-----------------------------------

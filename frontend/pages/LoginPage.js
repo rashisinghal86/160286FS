@@ -61,14 +61,14 @@ export default {
               console.log("Login Successful:", data);
               window.alert(`Login Success: ${data.email}`);
               this.$store.commit('setUser')
-              // if (data.customer.role == 'Customer') {
-              //     this.$router.push('/cust_db');
-              //     window.alert("Login Success",data.customer.role);
-              //  }
-                  if (data.professional.role == 'Professional') {
-                      this.$router.push('/prof_db');
-                      // window.alert("Login Success",data.professional.role);
-                  }  
+              if (data.customer.role == 'Customer') {
+                  this.$router.push('/cust_db');
+                  window.alert("Login Success",data.customer.role);
+               }
+                //   if (data.professional.role == 'Professional') {
+                //       this.$router.push('/prof_db');
+                //       // window.alert("Login Success",data.professional.role);
+                //   }  
               // else if (data.admin.role == 'Admin') {
               //     this.$router.push('/api/admin_db');
               //     window.alert("Login Success",data.admin.role);
