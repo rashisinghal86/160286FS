@@ -11,10 +11,10 @@ export default {
       <div v-if="transactions.length > 0">
           <div v-for="transaction in transactions" :key="transaction.id">
               <div class="heading">
-                  <h2 class="text-muted">Transaction # {{ transaction.id }}</h2>
-                  <p class="datetime">{{ formatDate(transaction.datetime) }}</p>
+                <h2 class="text-muted">Transaction # {{ transaction.id }}</h2>
+                <p class="datetime">{{ formatDate(transaction.datetime) }}</p>
               </div>
-              <div class="bookings">
+                <div class="bookings">
                   <table class="table">
                       <thead>
                           <tr>

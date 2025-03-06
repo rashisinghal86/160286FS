@@ -2,11 +2,17 @@ export default {
     template: `
     <div>
         <h2 class="display-1">Professional Bookings</h2>
+        <button class="btn btn-primary" @click="printPage" style="float: right;">
+          <i class="fas fa-print" aria-hidden="true"></i>
+          Print
+      </button>
         <hr>
         <div v-if="transactions.length > 0">
             <div v-for="transaction in transactions" :key="transaction.id" class="heading">
                 <h2 class="text-muted">Transaction # {{ transaction.id }}</h2>
                 <p class="datetime">{{ formatDate(transaction.datetime) }}</p>
+                <pre>{{ transactions }}</pre>
+
                 <div class="bookings">
                     <table class="table">
                         <thead>
@@ -27,12 +33,6 @@ export default {
                                 <td>{{ booking.location }}</td>
                                 <td>{{ booking.transaction.amount }}</td>
                                 <td>{{ booking.transaction.status }}</td>
-                                <td>
-                                    <input type="hidden" name="rating" placeholder="enter rating">
-                                </td>
-                                <td>
-                                    <input type="hidden" name="remarks" placeholder="enter remarks">    
-                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -46,25 +46,40 @@ export default {
     `,
     data() {
         return {
-            transactions: [] // Replace with actual data fetch
+            transactions: []
         };
     },
     methods: {
-        formatDate(datetime) {
-            if (!datetime) return '';
-            const date = new Date(datetime);
-            return date.toLocaleString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'short',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-            });
-        }
-    },
+        async fetchBookings() {
+            try {
+                const response = await fetch("/api/bookings");
+                if (!response.ok) throw new Error("Failed to fetch bookings");
+        
+                const data = await response.json();
+                console.log("API Response:", data);
+        
+                // Ensure transactions exist before assigning
+                if (data.transactions) {
+                    console.log("Transactions found:", data.transactions);
+                    this.transactions = data.transactions;
+                } else {
+                    console.log("No transactions found in the response");
+                    this.transactions = [];
+                }
+                console.log("Transactions after assignment:", this.transactions);
+            } catch (error) {
+                console.error("Error fetching bookings:", error);
+            }
+        },
+         printPage() {
+            window.print();
+        },
+        formatDate(date) {
+            return new Date(date).toLocaleString();
+            }
+    },        
+
     mounted() {
-        console.log('Professional Bookings Component Loaded');
-        // Fetch transactions data here
+        this.fetchBookings();
     }
-};
+}

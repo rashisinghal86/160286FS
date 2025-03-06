@@ -75,7 +75,10 @@ export default {
       },
       async fetchCustomers() {
         try {
-          const response = await fetch('/api/customers');
+          const response = await fetch('/api/admin/manage_customers');
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
           const data = await response.json();
           this.unblockedCustomers = data.unblocked_customers;
           this.blockedCustomers = data.blocked_customers;
@@ -85,28 +88,26 @@ export default {
       },
       async blockCustomer(customerId) {
         try {
-          const response = await fetch(`/api/customers/${customerId}/block`, {
+          const response = await fetch(`/api/admin/block_customer/${customerId}`, {
             method: 'POST',
           });
-          if (response.ok) {
-            this.fetchCustomers();
-          } else {
-            console.error('Failed to block customer');
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
           }
+          this.fetchCustomers();
         } catch (error) {
           console.error('Error blocking customer:', error);
         }
       },
       async unblockCustomer(customerId) {
         try {
-          const response = await fetch(`/api/customers/${customerId}/unblock`, {
+          const response = await fetch(`/api/admin/unblock_customer/${customerId}`, {
             method: 'POST',
           });
-          if (response.ok) {
-            this.fetchCustomers();
-          } else {
-            console.error('Failed to unblock customer');
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
           }
+          this.fetchCustomers();
         } catch (error) {
           console.error('Error unblocking customer:', error);
         }
@@ -115,5 +116,4 @@ export default {
     created() {
       this.fetchCustomers();
     },
-  };
-  
+};

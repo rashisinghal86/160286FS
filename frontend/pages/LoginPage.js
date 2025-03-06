@@ -61,21 +61,25 @@ export default {
               console.log("Login Successful:", data);
               window.alert(`Login Success: ${data.email}`);
               this.$store.commit('setUser')
-              if (data.customer.role == 'Customer') {
-                  this.$router.push('/cust_db');
-                  window.alert("Login Success",data.customer.role);
-               }
-                //   if (data.professional.role == 'Professional') {
+                    if (data.admin.role == 'Admin') {
+                        this.$router.push('/api/admin_db');
+                        window.alert("Login Success",data.admin.role);
+                }
+                // if (data.customer.role == 'Customer') {
+                //     this.$router.push('/cust_db');
+                //     window.alert("Login Success",data.customer.role);
+                // }
+                // if (data.professional.role == 'Professional') {
                 //       this.$router.push('/prof_db');
                 //       // window.alert("Login Success",data.professional.role);
                 //   }  
-              // else if (data.admin.role == 'Admin') {
-              //     this.$router.push('/api/admin_db');
-              //     window.alert("Login Success",data.admin.role);
-              //  }
-          } catch (error) {
-              console.error("Login Error:", error);
-              window.alert("Login Failed. Please check your credentials.");
+              
+              // else
+              // flash[:error] =
+              // "Invalid email or password. Please try again.( or your account is not activated yet or you are a hacker!!!!!!!)"
+            } catch (error) {
+                console.error("Login Error:", error);
+                window.alert("Login Failed. Please check your credentials.");
           }
       },
   }

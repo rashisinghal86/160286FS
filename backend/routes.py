@@ -171,11 +171,11 @@ def login():
                     # return jsonify({'message': 'Customer login successful', 'redirect_url':url_for('cust_db', user_id=customer.user_id)}), 200
                 else:
                     return jsonify({'message': 'Customer profile not found', 'redirect_url': url_for('register_cdb')}), 404
-            else:
+            elif role.name == 'Admin':
                 admin = Admin.query.filter_by(user_id=user.id).first()
                 return jsonify({
                     "message": "Login successful!",
-                    "customer": {
+                    "admin": {
                         "id": admin.user_id,
                         "name": admin.name,
                         "role": "Admin"  # Directly access the first role
@@ -976,8 +976,8 @@ def register_cdb_post():
 @app.route('/api/admin/customers', methods=['GET'])
 def get_customers():
     # Ensure the user is authenticated and has the proper role (Admin)
-    if not current_user.is_authenticated or current_user.role.name != 'Admin':
-        return jsonify({'error': 'Unauthorized access'}), 403
+    # if not current_user.is_authenticated or current_user.role.name != 'Admin':
+    #     return jsonify({'error': 'Unauthorized access'}), 403  
 
     # Get the query parameters for filtering customers
     cname = request.args.get('cname', '')  # Default to empty string if not provided
@@ -1002,24 +1002,43 @@ def get_customers():
     return jsonify(customer_list), 200
 
 # #admin route to manage customers
-# @app.route('/api/admin/manage_customers', methods=['GET'])
-# @roles_required('admin')  # Uncomment if you have role-based access control
+#admin route to manage customers
+# @app.route('/admin/manage_customers')
+# @roles_required('admin'
+# def manage_customers():   
+#     unblocked_customers = Customer.query.filter_by(is_blocked=False).all()
+#     blocked_customers = Customer.query.filter_by(is_blocked=True).all()
+
+#     return render_template('manage_customers.html',unblocked_customers=unblocked_customers, blocked_customers=blocked_customers)
+
+@app.route('/api/admin/manage_customers', methods=['GET'])
+# @roles_required('admin')
 def manage_customers():
-    """Fetch all customers categorized by blocked status."""
     unblocked_customers = Customer.query.filter_by(is_blocked=False).all()
     blocked_customers = Customer.query.filter_by(is_blocked=True).all()
 
-    response = {
-        "unblocked_customers": [
-            {"id": c.id, "name": c.users.username, "email": c.users.email} for c in unblocked_customers
-        ],
-        "blocked_customers": [
-            {"id": c.id, "name": c.users.username, "email": c.users.email} for c in blocked_customers
-        ],
-    }
+    unblocked_customers_data = [
+        {
+            'id': customer.id,
+            'name': customer.name,
+            'location': customer.location
+        }
+        for customer in unblocked_customers
+    ]
 
-    return jsonify(response), 200
+    blocked_customers_data = [
+        {
+            'id': customer.id,
+            'name': customer.name,
+            'location': customer.location
+        }
+        for customer in blocked_customers
+    ]
 
+    return jsonify({
+        'unblocked_customers': unblocked_customers_data,
+        'blocked_customers': blocked_customers_data
+    }), 200
 # # Admin route to unblock customer
 # @app.route('/admin/unblock_customer/<int:id>', methods=['POST'])
 # @roles_required('admin')
@@ -2560,12 +2579,10 @@ def api_bookings():
         ]
         return jsonify({'transactions': transactions_data}), 200
 
-    elif role_id == 2:  # Professional
-        professional = Professional.query.filter_by(user_id=session['user_id']).first()
-        if not professional:
-            return jsonify({'error': 'Professional does not exist'}), 404
-        
-        prof_transactions = Transaction.query.filter_by(professional_id=professional.id).order_by(Transaction.datetime.desc()).all()
+    elif role_id == 2:  # Professional     
+        prof_transactions = Transaction.query.filter_by(professional_id=session['user_id']).all()
+        print("Professional Transactions:", prof_transactions)  # Debugging
+
         transactions_data = [
             {
                 'id': transaction.id,
@@ -3015,6 +3032,103 @@ def api_accept_appointment(id):
     
 #     return render_template('admin_booking.html', bookings=bookings, schedules=schedules, transactions=transactions, customers=customers, professionals=professionals,users=users)
 
+
+@app.route('/api/admin/bookings', methods=['GET'])
+# @roles_required('admin')
+def admin_bookings():
+    users = User.query.all()
+    schedules = Schedule.query.all()
+    bookings = Booking.query.all()
+    transactions = Transaction.query.all()
+    customers = Customer.query.all()
+    professionals = Professional.query.all()
+    print(schedules)
+    print(customers)
+    print(professionals)
+    print(bookings)
+
+    data = {
+        'users': [
+            {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': Role.query.get(user.role_id).name if user.role_id else None
+            }
+            for user in users
+        ],
+        'schedules': [
+            {
+                'id': schedule.id,
+                'service': {
+                    'name': schedule.service.name,
+                    'price': schedule.service.price
+                },
+                'schedule_datetime': schedule.schedule_datetime,
+                'location': schedule.location,
+                'is_pending': schedule.is_pending,
+                'is_accepted': schedule.is_accepted,
+                'is_cancelled': schedule.is_cancelled,
+                'is_completed': schedule.is_completed
+            }
+            for schedule in schedules
+        ],
+        'customers': [
+            {
+                'user_id': customer.id,
+                'name': customer.name,
+                'location': customer.location
+            }
+            for customer in customers
+        ],
+        'professionals': [
+            {
+                'user_id': professional.id,
+                'name': professional.name,
+                'location': professional.location
+            }
+            for professional in professionals
+        ],
+        'transactions': [
+            {
+                'id': transaction.id,
+                'datetime': transaction.datetime,
+                'amount': transaction.amount,
+                'status': transaction.status,
+                'customer_id': transaction.customer_id,
+                'professional_id': transaction.professional_id,
+                'bookings': [
+                    {
+                        'id': booking.id,
+                        'service': {
+                            'name': booking.service.name,
+                            'type': booking.service.type
+                        },
+                        'location': booking.location,
+                        'date_of_completion': booking.date_of_completion,
+                        'rating': booking.rating,
+                        'remarks': booking.remarks
+                    }
+                    for booking in transaction.bookings
+                ] if transaction.bookings else []
+            }
+            for transaction in transactions
+        ]
+        # 'bookings': [
+        #     {
+        #         'id': booking.id,
+        #         'transaction_id': booking.transaction_id,
+        #         'service_name': booking.service.name,
+        #         'location': booking.location,
+        #         'date_of_completion': booking.date_of_completion,
+        #         'rating': booking.rating,
+        #         'remarks': booking.remarks
+        #     }
+        #     for booking in bookings
+        # ]
+    }
+
+    return jsonify(data), 200
 # @app.route('/prof/rating')
 # @login_required
 # def prof_byrating():

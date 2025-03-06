@@ -32,7 +32,7 @@ export default {
             menuItems: [
                 { title: 'My Profile', link: '/profile', icon: 'fa-solid fa-id-card fa-4x', seed: 'Profile', text: 'Edit Profile | Change Password' },
                 { title: 'View Pending Bookings', link: '/view_appointments', icon: 'fa-brands fa-buffer fa-5x', seed: 'PendingBookings', text: 'Manage your pending service requests' },
-                { title: 'View My Bookings', link: '/booking', icon: 'fa-solid fa-user-tie fa-5x', seed: 'Bookings', text: 'Review your confirmed bookings' }
+                { title: 'View My Bookings', link: '/prof_booking', icon: 'fa-solid fa-user-tie fa-5x', seed: 'Bookings', text: 'Review your confirmed bookings' }
             ]
         }
     },
