@@ -35,4 +35,9 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'your_email_password'
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or 'your_email@example.com'
 
+    # Cache Configurations
+    CACHE_TYPE = 'simple'  # Use simple in-memory cache
+    CACHE_DEFAULT_TIMEOUT = 300  # Cache timeout in seconds
+    CACHE_REDIS_PORT = 6379
+
     

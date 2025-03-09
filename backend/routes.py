@@ -11,9 +11,11 @@ from flask_security.utils import verify_and_update_password, login_user
 import os
 from werkzeug.utils import secure_filename
 
+
 UPLOAD_FOLDER = 'static/uploads'
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf'}
+cache = app.cache 
 
 #app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def allowed_file(filename):
@@ -36,7 +38,11 @@ def index():
 # @app.route('/home')
 # def home():
 #    return render_template('custom_login.html')
+@app.route('/cache')
+@cache.cached(timeout=5)
 
+def cache():
+    return {'time': str(datetime.now())}
 @app.route('/protected')
 @login_required
 def protected():

@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_security import Security, SQLAlchemyUserDatastore
 from extensions import db
 from backend.models import User, Role, add_roles, create_default_admin
+from flask_caching import Cache
 
 # Initialize the Flask application
 # app = Flask(__name__)
@@ -17,8 +18,12 @@ app.config.from_object('backend.config.Config')
 # Initialize the database
 db.init_app(app)
 
+# Initialize the cache
+cache = Cache(app)
+
 # Setup Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+app.cache = cache
 security = Security(app, user_datastore, register_blueprint=False)
 
 
