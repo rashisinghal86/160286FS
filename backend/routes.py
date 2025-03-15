@@ -10,7 +10,8 @@ from functools import wraps
 from flask_security.utils import verify_and_update_password, login_user
 import os
 from werkzeug.utils import secure_filename
-
+from backend.celery.tasks import add
+from celery.result import AsyncResult
 
 UPLOAD_FOLDER = 'static/uploads'
 
@@ -47,6 +48,22 @@ def cache():
 @login_required
 def protected():
     return 'protected'
+
+
+
+
+@app.get('/celery')
+def celery():
+    task = add.delay(10, 20)
+    return {'task_id' : task.id}
+
+@app.get('/getcelerydata/<id>')
+def getData(id):
+    result = AsyncResult(id)
+    if result.ready():
+        return {'result': result.result}
+    else:
+        return {'status': 'processing'}
 
 
 # @app.route('/login', methods=['GET', 'POST'])

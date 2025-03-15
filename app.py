@@ -5,6 +5,7 @@ from flask_security import Security, SQLAlchemyUserDatastore
 from extensions import db
 from backend.models import User, Role, add_roles, create_default_admin
 from flask_caching import Cache
+from backend.celery.celery_frame import celery_init_app
 
 # Initialize the Flask application
 # app = Flask(__name__)
@@ -26,6 +27,8 @@ user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 app.cache = cache
 security = Security(app, user_datastore, register_blueprint=False)
 
+# Initialize Celery
+celery_app = celery_init_app(app)  # Ensure Celery is properly initialized
 
 # Create the database tables and default data
 with app.app_context():
