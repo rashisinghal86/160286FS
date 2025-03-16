@@ -6,6 +6,9 @@ from extensions import db
 from backend.models import User, Role, add_roles, create_default_admin
 from flask_caching import Cache
 from backend.celery.celery_frame import celery_init_app
+import flask_excel as excel
+
+
 
 # Initialize the Flask application
 # app = Flask(__name__)
@@ -38,6 +41,9 @@ with app.app_context():
 
 # Import backend.routes after app setup
 import backend.routes
+
+#flask-excel
+excel.init_excel(app)
 
 if __name__ == '__main__':
     app.run(debug=True)

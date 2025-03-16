@@ -10,7 +10,7 @@ from functools import wraps
 from flask_security.utils import verify_and_update_password, login_user
 import os
 from werkzeug.utils import secure_filename
-from backend.celery.tasks import add
+from backend.celery.tasks import add, create_csv
 from celery.result import AsyncResult
 
 UPLOAD_FOLDER = 'static/uploads'
@@ -64,6 +64,11 @@ def getData(id):
         return {'result': result.result}
     else:
         return {'status': 'processing'}
+    
+@app.get('/create-csv')
+def createCSV():
+    task = create_csv.delay()
+    return {'task_id': task.id}, 200
 
 
 # @app.route('/login', methods=['GET', 'POST'])

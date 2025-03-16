@@ -1,0 +1,5 @@
+id,customer_id,professional_id,amount,datetime,status
+1,5,2,150.0,2025-03-02T17:37:24.853644,Accepted
+2,5,2,120.0,2025-03-02T17:47:27.980136,Accepted
+3,5,2,200.0,2025-03-02T17:50:48.926692,Completed
+4,5,2,200.0,2025-03-02T17:54:08.429759,Completed
