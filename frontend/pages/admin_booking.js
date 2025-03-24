@@ -8,7 +8,7 @@ export default {
 
         <h1 class="display-4">Admin Overview</h1>
         <hr>
-        <button class="btn btn-danger" @click="deleteUser" style="float: right;">
+        <button class="btn btn-danger" @click="goToDeleteUser" style="float: right;">
             <i class="fa-solid fa-user-slash"></i> Delete Customer/Professional Account Permanently
         </button>
         <br>
@@ -88,20 +88,21 @@ export default {
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="transaction in transactions" :key="transaction.id">
-                    <td v-for="booking in transaction.bookings" :key="booking.id">
-                        {{ booking.id }}
-                    </td>
-                    <td>{{ booking.service.type }}</td>
-                    <td>{{ booking.service.name }}</td>
-                    <td>{{ booking.location }}</td>
-                    <td>{{ transaction.customer_id }}</td>
-                    <td>{{ transaction.professional_id }}</td>
-                    <td>{{ transaction.amount }}</td>
-                    <td>{{ transaction.status }}</td>
-                    <td>{{ booking.rating }}</td>
-                    <td>{{ booking.remarks }}</td>
-                </tr>
+            <tr v-for="transaction in transactions" :key="transaction.id">
+                <template v-for="booking in transaction.bookings" :key="booking.id">
+                
+                        <td>{{ booking.id }}</td>
+                        <td>{{ booking.service?.type }}</td>
+                        <td>{{ booking.service?.name }}</td>
+                        <td>{{ booking.location }}</td>
+                        <td>{{ transaction.customer_id }}</td>
+                        <td>{{ transaction.professional_id }}</td>
+                        <td>{{ transaction.amount }}</td>
+                        <td>{{ transaction.status }}</td>
+                        <td>{{ booking.rating }}</td>
+                        <td>{{ booking.remarks }}</td>
+                    </tr>
+                </template>
             </tbody>
         </table>
     </div>
@@ -111,7 +112,7 @@ export default {
             customers: [],
             professionals: [],
             schedules: [],
-            transactions: []
+            transactions: [],
         };
     },
     methods: {
@@ -125,9 +126,13 @@ export default {
                 this.customers = data.customers || [];
                 this.professionals = data.professionals || [];
                 this.schedules = data.schedules || [];
-                // this.transactions = data.transactions || [];
+                this.transactions = data.transactions || [];
+                
 
-                this.bookings= data.booking || [];
+
+                console.log('transactions:', this.transactions[0]);
+                console.log('admin data:', data);
+                
             } catch (error) {
                 console.error('Error fetching admin data:', error);
             }
@@ -135,10 +140,8 @@ export default {
         printPage() {
             window.print();
         },
-        async deleteUser() {
-            if (confirm('Are you sure you want to delete an account permanently?')) {
-                // Implement delete user functionality
-            }
+        goToDeleteUser() {
+            this.$router.push('/delete_user');
         }
     },
     async created() {

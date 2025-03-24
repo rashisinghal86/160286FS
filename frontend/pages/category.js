@@ -21,31 +21,30 @@ export default {
           <table class="table table-striped mt-3">
             <thead>
               <tr>
-                <th style="width: 10%">ID</th>
-                <th style="width: 15%">Service_Type</th>
-                <th style="width: 15%">Services Offered</th>
-                <th style="width: 60%; text-align:center;">Management Tools</th>
+                <th style="width: 1%">ID</th>
+                <th style="width: 12%">Service_Type</th>
+                <th style="width: 10%">Services Offered</th>
+                <th style="width: 10%; text-align:center;">Management Tools</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="category in categories" :key="category.id">
-                <td>[[ category.id ]]</td>
-                <td>[[ category.name ]]</td>
-                <td>[[ category.services.length ]]</td>
-              <td>
+                <td>{{ category.id}}</td>
+                <td>{{category.name }}</td>
                 
-                  <button @click="get_services(category.id)" class="btn btn-primary">
-                    <i class="fa-solid fa-magnifying-glass-plus"></i> Show Details
-                  </button>
-                  
+              <td><button @click="goToServicePage(category.id)" class="btn btn-primary">
+              <i class="fa-solid fa-magnifying-glass-plus"></i> Show Details
+            </button></td>
+              
+                <td>
                   <button @click="openEditModal(category)" class="btn btn-warning">
                     <i class="fas fa-edit"></i> Edit Type
-                  </button>
+                  </button>                  
                   <button @click="deleteCategory(category.id)" class="btn btn-danger">
                     <i class="fa-regular fa-trash-can"></i> Delete Type
                   </button>
+                  </td>
                   
-                  <router-link :to="'/api/categories/' + category.id + '/services'">Go to Service Page</router-link>
                 </td>
               </tr>
             </tbody>
@@ -86,6 +85,28 @@ export default {
     },
   
     methods: {
+      
+      async goToServicePage(categoryId) {
+        try {
+          const response = await fetch(`/api/categories/${categoryId}/services`);
+          if (!response.ok) throw new Error('Failed to fetch services');
+          
+          const data = await response.json();
+          
+          console.log(data); // Debugging
+          
+         
+  
+          // Navigate to the service details page
+          this.$router.push({ path: `/categories/${categoryId}/services` });
+        } catch (error) {
+          console.error('Error:', error);
+        }
+      },
+  
+             
+    
+
       async fetchCategories() {
         try {
           const token = localStorage.getItem('token');

@@ -5,7 +5,7 @@ export default {
         <div class="profile-pic">
             <img :src="'https://api.dicebear.com/9.x/bottts/svg?seed=' + email" width="100" alt="avatar">
         </div>
-        <h3 class="text-muted">Welcome, {{ email }} </h3>
+        <h3 class="text-muted">Welcome to your Dashboard, Professional </h3>
         <hr>
         <h4>What would you like to do?</h4>
         <div class="row justify-content-center align-items-center">

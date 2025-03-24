@@ -11,6 +11,7 @@ from backend.config import Config
 def create_app():
       app = Flask(__name__)
       app.config.from_object(Config)
+      #Enable Task Tracking:
       db.init_app(app)
       excel.init_excel(app)  # Initialize Flask-Excel
       return app

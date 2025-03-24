@@ -48,14 +48,15 @@ import view_appointments from '../pages/view_appointments.js'
 import profilewrapper from '../components/profilewrapper.js';
 import Category from '../pages/category.js';
 import service from '../pages/service.js';
-
+import services from '../pages/service.js';
+import Service from '../pages/service.js';
 
 
 
 
 
 const routes = [
-    {path: '/', component: Home},
+    {path: '/', component: homecss},
     {path: '/api/login', component: LoginPage},
     {path: '/register', component: RegisterPage},
     {path: '/template', component: template},
@@ -103,6 +104,10 @@ const routes = [
     { path: '/categories', component: Category },
     {path: '/service', component: service},
     {path: '/api/categories/:id/services', component: service},
+    {path: '/categories/:categoryId/services', component: services},
+    { path: '/categories', component: Category },
+    { path: '/categories/:categoryId/services', component: Service },
+
     
 
 

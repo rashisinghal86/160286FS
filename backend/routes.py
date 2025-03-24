@@ -1,5 +1,5 @@
 from app import app
-from flask import jsonify, render_template, request, flash, redirect, url_for, session
+from flask import jsonify, render_template, request, flash, redirect, url_for, session, send_file
 from backend.models import db, User, Role,Admin, Professional, Customer, Category, Service, Schedule, Transaction, Booking
 
 from flask_security import login_required, roles_required, current_user, login_user, logout_user
@@ -12,13 +12,15 @@ import os
 from werkzeug.utils import secure_filename
 from backend.celery.tasks import add, create_csv
 from celery.result import AsyncResult
+import time
+
 
 UPLOAD_FOLDER = 'static/uploads'
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf'}
 cache = app.cache 
 
-#app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -49,6 +51,9 @@ def cache():
 def protected():
     return 'protected'
 
+import logging
+
+
 
 
 
@@ -64,11 +69,38 @@ def getData(id):
         return {'result': result.result}
     else:
         return {'status': 'processing'}
-    
-@app.get('/create-csv')
+
+# Route to create a CSV file    
+@app.get('/create_csv')
 def createCSV():
     task = create_csv.delay()
     return {'task_id': task.id}, 200
+# Route to get the CSV file
+@app.get('/get_csv/<id>')
+def getCSV(id):
+    result = AsyncResult(id)
+    time.sleep(5)    
+    if result.ready():
+        filename = result.result
+        return send_file(f'./backend/celery/user-downloads/{filename}', as_attachment=True)
+    return {'status': 'processing'}
+
+# @app.get('/get_csv/<task_id>')
+# def getCSV(task_id):
+#     result = AsyncResult(task_id)
+#     logging.info(f'Task ID: {task_id}, State: {result.state}, Result: {result.result}')
+#     if result.ready():
+#         file_path = f'./backend/celery/user-downloads/{result.result}'
+#         if os.path.exists(file_path):
+#             logging.info(f'File found: {file_path}')
+#             return send_file(file_path, as_attachment=True), 200
+#         else:
+#             logging.error(f'File not found: {file_path}')
+#             return {'status': 'file not found'}, 404
+#     else:
+#         logging.info(f'Task {task_id} is still processing.')
+#         return {'status': 'incomplete'}, 202
+
 
 
 # @app.route('/login', methods=['GET', 'POST'])
@@ -720,20 +752,26 @@ def register_professional():
 @app.route('/api/upload_professional_file', methods=['POST'])
 def upload_professional_file():
     """API for handling professional document uploads."""
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
 
-    file = request.files['file']
-    
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+        file = request.files['file']
 
-    if file and allowed_file(file.filename):
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        if not allowed_file(file.filename):
+            return jsonify({'error': 'Invalid file type'}), 400
+
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        return jsonify({"message": "File uploaded successfully", "filename": filename}), 200
-    
-    return jsonify({"error": "Invalid file type"}), 400
+
+        return jsonify({'message': 'File uploaded successfully'}), 200
+
+    except Exception as e:
+        print("Error:", str(e))  # Log error to console
+        return jsonify({'error': 'Internal Server Error', 'details': str(e)}), 500
 
 
 # @app.route('/admin/professionals')
@@ -785,8 +823,8 @@ def professionals():
         }
     }), 200
 
+
 @app.route('/api/admin/pending_professionals', methods=['GET'])
-# @roles_required('admin')
 @login_required
 def pending_professionals():
     if current_user.role_id != 1:
@@ -798,17 +836,23 @@ def pending_professionals():
     blocked_professionals = Professional.query.filter_by(is_flagged=True).all()
 
     # Prepare data to return
-    pending_list = [{'id': prof.id, 'name': prof.name, 'service_type': prof.service_type, 'location': prof.location, 'experience': prof.experience} for prof in pending_professionals]
-    approved_list = [{'id': prof.id, 'name': prof.name, 'service_type': prof.service_type, 'location': prof.location, 'experience': prof.experience} for prof in approved_professionals]
-    blocked_list = [{'id': prof.id, 'name': prof.name, 'service_type': prof.service_type, 'location': prof.location, 'experience': prof.experience} for prof in blocked_professionals]
+    pending_list = [{'id': prof.id, 'name': prof.name, 'service_type': prof.service_type, 
+                     'location': prof.location, 'experience': prof.experience, 'filename': prof.filename} 
+                    for prof in pending_professionals]
 
-    # Return the data as JSON
+    approved_list = [{'id': prof.id, 'name': prof.name, 'service_type': prof.service_type, 
+                      'location': prof.location, 'experience': prof.experience} 
+                     for prof in approved_professionals]
+
+    blocked_list = [{'id': prof.id, 'name': prof.name, 'service_type': prof.service_type, 
+                     'location': prof.location, 'experience': prof.experience} 
+                    for prof in blocked_professionals]
+
     return jsonify({
         'pending_professionals': pending_list,
         'approved_professionals': approved_list,
         'blocked_professionals': blocked_list
     }), 200
-
 # # Admin route to approve professional
 # @app.route('/admin/approve_professional/<int:id>', methods=['POST'])
 # @roles_required('admin')
@@ -821,20 +865,22 @@ def pending_professionals():
 #         flash(f'Professional {professional.name} approved successfully')
 #     return redirect(url_for('pending_professionals'))
 @app.route('/api/admin/approve_professional/<int:id>', methods=['POST'])
-@roles_required('admin')
+# @roles_required('admin')
 def approve_professional(id):
-    professional = Professional.query.get(id)
-    if professional:
+    """API endpoint to approve a professional"""
+    try:
+        professional = Professional.query.get(id)
+        if not professional:
+            return jsonify({'error': 'Professional not found'}), 404
+
         professional.is_verified = True
-        # professional.is_flagged = True (if needed, you can include this logic)
         db.session.commit()
-        return jsonify({
-            'message': f'Professional {professional.name} approved successfully',
-            'professional_id': professional.id,
-            'is_verified': professional.is_verified
-        }), 200
-    else:
-        return jsonify({'error': 'Professional not found'}), 404
+
+        return jsonify({'message': 'Professional approved successfully'}), 200
+
+    except Exception as e:
+        print("Error:", str(e))  # Log error to console
+        return jsonify({'error': 'Internal Server Error', 'details': str(e)}), 500
 
 # # Admin route to block professional
 # @app.route('/admin/block_professional/<int:id>', methods=['POST'])
@@ -850,30 +896,24 @@ def approve_professional(id):
 #     return redirect(url_for('pending_professionals'))
 
 @app.route('/api/admin/block_professional/<int:id>', methods=['POST'])
-# @roles_required('admin')  # Can be handled through Flask-Security or other role-based checks
+# @login_required
+# @roles_required('admin')
 def block_professional(id):
-    # Check if the current user is an admin
-    if not current_user.is_authenticated or current_user.role.name != 'Admin':
-        return jsonify({'error': 'Unauthorized access. Admins only.'}), 403
-
-    # Fetch the professional by ID
     professional = Professional.query.get(id)
-    if professional:
-        # Block the professional by updating their flags
-        professional.is_flagged = True
-        professional.is_verified = False
-        db.session.commit()
+    if not professional:
+        return jsonify({'error': 'Professional not found'}), 404
 
-        # Return success response
-        return jsonify({
-            'message': f'Professional {professional.name} blocked successfully',
-            'professional_id': professional.id,
-            'is_flagged': professional.is_flagged,
-            'is_verified': professional.is_verified
-        }), 200
+    # Block the professional
+    professional.is_flagged = True
+    professional.is_verified = False
+    db.session.commit()
 
-    return jsonify({'error': 'Professional not found'}), 404
-
+    return jsonify({
+        'message': f'Professional {professional.name} blocked successfully',
+        'professional_id': professional.id,
+        'is_flagged': professional.is_flagged,
+        'is_verified': professional.is_verified
+    }), 200
 
 # # Admin route to unblock professional
 # @app.route('/admin/unblock_professional/<int:id>', methods=['POST'])
@@ -887,22 +927,23 @@ def block_professional(id):
 #     return redirect(url_for('pending_professionals'))
 
 @app.route('/api/admin/unblock_professional/<int:id>', methods=['POST'])
-@roles_required('admin')  # Ensure only admins can access this route
+# @login_required
+# @roles_required('admin')
 def unblock_professional(id):
     professional = Professional.query.get(id)
-    if professional:
-        # Unblock the professional
-        professional.is_flagged = False
-        db.session.commit()
-        return jsonify({
-            'message': f'Professional {professional.name} unblocked successfully',
-            'professional_id': professional.id,
-            'status': 'unblocked'
-        }), 200
-    else:
-        return jsonify({
-            'error': 'Professional not found'
-        }), 404
+    if not professional:
+        return jsonify({'error': 'Professional not found'}), 404
+
+    # Unblock the professional
+    professional.is_flagged = False
+    db.session.commit()
+
+    return jsonify({
+        'message': f'Professional {professional.name} unblocked successfully',
+        'professional_id': professional.id,
+        'status': 'unblocked'
+    }), 200
+
 
 # #  professional dashboard link to show all the appointments- accept/ reject
     
@@ -1274,6 +1315,7 @@ def delete_cust():
 def get_users():
     """Retrieve all users, professionals, and customers."""
     users = User.query.all()
+    admin = Admin.query.all()
     professionals = Professional.query.all()
     customers = Customer.query.all()
 
@@ -1289,7 +1331,9 @@ def get_users():
         }
         for user in users
     ]
-
+    admin_data = [
+        {"id": a.id, "name": a.name, "email": a.users.email} for a in admin
+    ]
     professionals_data = [
         {"id": p.id, "name": p.name, "email": p.users.email} for p in professionals
     ]
@@ -1300,6 +1344,7 @@ def get_users():
 
     return jsonify({
         "users": users_data,
+        "admin": admin_data,
         "professionals": professionals_data,
         "customers": customers_data
     }), 200
@@ -1398,19 +1443,20 @@ def profile():
     if role.name == 'Professional':
         professional = Professional.query.filter_by(user_id=user.id).first()
         if professional:
-            profile_data["professional"] = {
-                "id": professional.id,
-                "experience": professional.experience,
-                "service_type": professional.service_type
-            }
-    
+            profile_data["name"] = professional.name
+            profile_data["experience"] = professional.experience
+            profile_data["service_type"] = professional.service_type
+
     elif role.name == 'Customer':
         customer = Customer.query.filter_by(user_id=user.id).first()
         if customer:
-            profile_data["customer"] = {
-                "id": customer.id,
-                "location": customer.location
-            }
+            profile_data["name"] = customer.name
+            profile_data["location"] = customer.location
+
+    elif role.name == 'Admin':
+        admin = Admin.query.filter_by(user_id=user.id).first()
+        if admin:
+            profile_data["name"] = admin.name
 
     return jsonify(profile_data), 200
 
@@ -2013,20 +2059,54 @@ def create_service(category_id):
     return jsonify({'message': 'Service created successfully', 'service_id': new_service.id}), 201
 
 
+# @app.route('/api/categories/<int:category_id>/services', methods=['GET'])
+# @login_required
+# def get_services(category_id):
+#     services = Service.query.filter_by(category_id=category_id).all()
+#     print(services)
+#     if not services:
+#         return jsonify({'error': 'No services found'}), 404
+#     services_list = [{
+#         'id': service.id,
+#         'name': service.name,
+#         'type': service.type,
+#         'description': service.description,
+#         'price': service.price,
+#         'location': service.location,
+#         'duration': service.duration
+#     } for service in services]
+#     categories = Category.query.all()
+#     category_list = [{
+#         'id': category.id,
+#         'name': category.name
+#     } for category in categories]
+#     print(services_list)
+
+#     return jsonify(services_list, category_list), 200
+
 @app.route('/api/categories/<int:category_id>/services', methods=['GET'])
-@login_required
-def get_services(category_id):
+def get_services_by_category(category_id):
+    category = Category.query.get(category_id)
+    if not category:
+        return jsonify({'error': 'Category does not exist'}), 404
+    
     services = Service.query.filter_by(category_id=category_id).all()
-    services_list = [{
-        'id': service.id,
-        'name': service.name,
-        'type': service.type,
-        'description': service.description,
-        'price': service.price,
-        'location': service.location,
-        'duration': service.duration
-    } for service in services]
-    return jsonify(services_list), 200
+    
+    return jsonify({
+        'category': {'id': category.id, 'name': category.name},
+        'services': [
+            {
+                'id': service.id,
+                'name': service.name,
+                'type': service.type,
+                'description': service.description,
+                'price': service.price,
+                'location': service.location,
+                'duration': service.duration
+            }
+            for service in services
+        ]
+    }), 200
 
 @app.route('/api/categories/<int:category_id>/services/<int:service_id>', methods=['GET'])
 @login_required

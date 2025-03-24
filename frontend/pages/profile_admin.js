@@ -4,7 +4,7 @@ export default {
         <div class="row">
             <div class="col-md-6">
                 <h1 class="display-4">
-                    Hello <span class="text-muted">@{{ user.username }}</span>
+                    Hello <span class="text-muted">{{ user.name || 'Admin' }}</span>
                 </h1>
                 <div class="profile-pic">
                     <img src="https://api.dicebear.com/9.x/bottts/svg?seed=Webmaster" width="100" alt="avatar">
@@ -56,9 +56,16 @@ export default {
     },
     methods: {
         async fetchUserData() {
-            const response = await fetch('/api/users');
-            if (response.ok) {
-                this.user = await response.json();
+            try {
+                const response = await fetch('/api/profile');
+                if (response.ok) {
+                    this.user = await response.json();
+                    console.log("Fetched User:", this.user);
+                } else {
+                    console.error("Failed to fetch user data");
+                }
+            } catch (error) {
+                console.error("Error fetching user data:", error);
             }
         },
         async updateProfile() {

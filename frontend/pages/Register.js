@@ -52,7 +52,8 @@ export default {
             username: null,
             password: null,
             confirmPassword: null,
-            selectedRole: null
+            selectedRole: null,
+            output: null
         };
     },
     methods: {
@@ -82,8 +83,22 @@ export default {
 
                 if (response.ok) {
                     const data = await response.json();
-                    window.alert(`Registration successful! Welcome, ${data.username}`);
-                    console.log('Success:', data);
+                    localStorage.setItem('token', data.authentication_token);
+                    this.output = data;
+                    console.log("Registration Successful:", data);
+                    window.alert(`Registration successful! Welcome, ${this.username}`);
+                    this.$store.commit('setUser');
+            
+                    // Simulating login process after registration
+                    localStorage.setItem('email', this.email);
+                    localStorage.setItem('role', this.selectedRole);
+            
+                    // Redirect based on role
+                    if (this.selectedRole === 'Customer') {
+                      this.$router.push('/cust_db');
+                    } else if (this.selectedRole === 'Professional') {
+                      this.$router.push('/verify_prof');
+                    }
                 } else {
                     const errorData = await response.json();
                     window.alert(`Error: ${errorData.message || "Something went wrong."}`);
