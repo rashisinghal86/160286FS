@@ -16,11 +16,25 @@ def create_app():
       excel.init_excel(app)  # Initialize Flask-Excel
       return app
 
+# class CeleryConfig():
+#     broker_url = 'redis://localhost:6379/0'
+#     result_backend = 'redis://localhost:6379/0'
+#     timezone = 'Asia/Kolkata'
+#     include = ['backend.celery.tasks']  # Ensure tasks are included
+#     broker_connection_retry_on_startup = True
 class CeleryConfig():
     broker_url = 'redis://localhost:6379/0'
-    result_backend = 'redis://localhost:6379/1'
+    result_backend = 'redis://localhost:6379/0'  # Must be explicitly set
+    task_track_started = True  # Tracks task state from start
+    task_ignore_result = False  # Ensures task results are stored
+    result_extended = True  # Stores additional result metadata (optional)
     timezone = 'Asia/Kolkata'
+    enable_utc = False
     include = ['backend.celery.tasks']  # Ensure tasks are included
+    broker_connection_retry_on_startup = True
+    accept_content = ["json"]
+    task_serializer = "json"
+    result_serializer = "json"
 
 def celery_init_app(app: Flask) -> Celery:
     class FlaskTask(Task):

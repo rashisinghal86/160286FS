@@ -65,7 +65,21 @@ export default {
                 });
   
                 if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                    const errorData = await response.json();
+                    if (response.status === 403) {
+                      if (errorData.message === 'Customer is blocked') {
+                        window.alert("Your account has been blocked. Please wait for further instructions.");
+                      } else if (errorData.message === 'Professional is flagged') {
+                        window.alert("Your account has been flagged. Please wait for further instructions.");
+                      } else if (errorData.message === 'Professional is under verification') {
+                        window.alert("Your account is under verification. Please wait for further instructions.");
+                      } else {
+                        window.alert("Login Failed. Please check your credentials.");
+                      }
+                    } else {
+                      window.alert("Login Failed. Please check your credentials.");
+                    }
+                    return;
                 }
                 
                 const data = await response.json();
@@ -79,12 +93,21 @@ export default {
                     this.$router.push('/api/admin_db');
                     window.alert("Login Success", data.admin.role);
                 } else if (data.customer?.role === 'Customer') {
+                    if (data.customer.is_blocked === true) {
+                        window.alert("Your account has been blocked. Please wait for further instructions.");
+                    } else {
                     this.$router.push('/cust_db');
                     window.alert("Login Success", data.customer.role);
+                    }
                 } else if (data.professional?.role === 'Professional') {
-                    this.$router.push('/prof_db');
-                    window.alert("Login Success", data.professional.role);
-                } else {
+                    if (data.professional.is_flagged === true) {
+                        window.alert("Your account has been flagged. Please wait for further instructions.");
+                      } else if (data.professional.is_verified === false) {
+                        window.alert("Your account is under verification. Please wait for further instructions.");
+                      } else {
+                        this.$router.push('/prof_db');
+                        window.alert("Login Success", data.professional.role);
+                      }                } else {
                     window.alert("Invalid email or password. Please try again.");
                 }
             } catch (error) {
@@ -94,4 +117,3 @@ export default {
         },
     }
   };
-  

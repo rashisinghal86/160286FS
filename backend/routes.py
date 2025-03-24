@@ -101,6 +101,22 @@ def getCSV(id):
 #         logging.info(f'Task {task_id} is still processing.')
 #         return {'status': 'incomplete'}, 202
 
+# ----------------------------------------------------------------------
+@app.route('/api/export') #this manually triggers the task
+def export_csv():
+    """API to export a CSV file."""
+    result = create_csv.delay() #async object id, task id,result
+    return jsonify({'id': result.id, "result": result.result}), 200
+
+@app.route('/api/csv_result/<id>') #just to check the status of the task
+def csv_result(id):
+    """API to get the result of a CSV export task."""
+    result = AsyncResult(id)
+    return {
+        "ready" : result.ready(),
+        "successful" : result.successful(),
+        "value" : result.result if result.ready() else None
+    }
 
 
 # @app.route('/login', methods=['GET', 'POST'])
@@ -148,13 +164,122 @@ def getCSV(id):
 #             flash("Invalid email or password.", "danger")
 #             return redirect(url_for('login'))
  
+# @app.route('/api/login', methods=['GET', 'POST'])
+# def login():
+#     if request.method == 'GET':
+#         # Respond with JSON if already authenticated
+#         if current_user.is_authenticated:
+#             return jsonify({"message": "You are already logged in.",
+#                     "user": {
+#                     "id": current_user.id,
+#                     "username": current_user.username,
+#                     "email": current_user.email,
+#                     "role": current_user.role.name  # Fetch dynamic role
+#                 }
+#             }), 200
+#         return jsonify({"message": "Please log in to continue."}), 200
+
+#     elif request.method == 'POST':
+
+#         data = request.get_json()
+#         email = data.get('email')
+#         password = data.get('password')
+
+#         if not email or not password:
+#             return jsonify({"error": "Email and password are required."}), 400
+
+#         user = User.query.filter_by(email=email).first()
+#         if user and check_password_hash(user.password, password):
+#             login_user(user)
+
+#             # Store user ID in session
+#             session['user_id'] = user.id
+#             session.permanent = True  # Optional: Keeps the session active
+#             role = Role.query.get(user.role_id)
+#             print(role)
+#             print(role.name)
+            
+#             # Ensure user has a role and return it in response
+#             if not user.roles or len(user.roles) == 0:
+#                 return jsonify({"error": "User has no assigned role!"}), 400
+            
+#             if role.name == 'Professional':
+#                 professional = Professional.query.filter_by(user_id=user.id).first()
+#                 if not professional:
+#                     return jsonify({'message': 'Professional profile not found', 'redirect_url': url_for('register_pdb')}), 404
+#                 if professional.is_flagged:
+#                     return jsonify({'message': 'Professional is flagged', 'redirect_url': url_for('flag_prof', professional_id=professional.id)}), 403
+#                 if professional.is_verified:
+#                     return jsonify({'message': 'Professional login successful', 'redirect_url': url_for('prof_db', username=professional.user.username)}), 200
+#                 else:
+#                     return jsonify({
+#                     "message": "Login successful!",
+#                     "professional": {
+#                         "id": professional.user_id,
+#                         "name": professional.name,
+#                         "email": professional.email,
+#                         "role": "Professional"  # Directly access the first role
+
+#                     },
+#                     "authentication_token": user.get_auth_token()  # Generate and return token
+#                 }), 200
+
+#             elif role.name == 'Customer':
+#                 customer = Customer.query.filter_by(user_id=user.id).first()
+#                 if customer:
+#                     if customer.is_blocked:
+#                         return jsonify({'message': 'Account is blocked'}), 403
+#                     return jsonify({
+#                     "message": "Login successful!",
+#                     "customer": {
+#                         "id": customer.user_id,
+#                         "name": customer.name,
+#                         "email": customer.email,
+#                         "role": "Customer",
+#                         "is_blocked": customer.is_blocked # Directly access the first role
+
+#                     },
+#                     "authentication_token": user.get_auth_token()  # Generate and return token
+#                 }), 200
+
+                
+            
+                    
+                    # return jsonify({'message': 'Customer login successful', 'redirect_url':url_for('cust_db', user_id=customer.user_id)}), 200
+        #         else:
+        #             return jsonify({'message': 'Customer profile not found', 'redirect_url': url_for('register_cdb')}), 404
+        #     elif role.name == 'Admin':
+        #         admin = Admin.query.filter_by(user_id=user.id).first()
+        #         return jsonify({
+        #             "message": "Login successful!",
+        #             "admin": {
+        #                 "id": admin.user_id,
+        #                 "name": admin.name,
+        #                 "role": "Admin"  # Directly access the first role
+
+        #             },
+        #             "authentication_token": user.get_auth_token()  # Generate and return token
+        #         }), 200
+        # else:
+        #         return jsonify({
+        #             "message": "Login successful!",'redirect_url': url_for('home'),
+        #             "user": {
+        #                 "id": user.id,
+        #                 "username": user.username,
+        #                 "email": user.email,
+        #                 "role": user.roles[0].name  # Directly access the first role
+
+        #             },
+        #             "authentication_token": user.get_auth_token()  # Generate and return token
+        #         }), 200
 @app.route('/api/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
         # Respond with JSON if already authenticated
         if current_user.is_authenticated:
-            return jsonify({"message": "You are already logged in.",
-                    "user": {
+            return jsonify({
+                "message": "You are already logged in.",
+                "user": {
                     "id": current_user.id,
                     "username": current_user.username,
                     "email": current_user.email,
@@ -164,7 +289,6 @@ def login():
         return jsonify({"message": "Please log in to continue."}), 200
 
     elif request.method == 'POST':
-
         data = request.get_json()
         email = data.get('email')
         password = data.get('password')
@@ -192,18 +316,18 @@ def login():
                 if not professional:
                     return jsonify({'message': 'Professional profile not found', 'redirect_url': url_for('register_pdb')}), 404
                 if professional.is_flagged:
-                    return jsonify({'message': 'Professional is flagged', 'redirect_url': url_for('flag_prof', professional_id=professional.id)}), 403
-                if professional.is_verified:
-                    return jsonify({'message': 'Professional login successful', 'redirect_url': url_for('prof_db', username=professional.user.username)}), 200
-                else:
-                    return jsonify({
+                    return jsonify({'message': 'Professional is flagged', 'is_flagged': True}), 403
+                if not professional.is_verified:
+                    return jsonify({'message': 'Professional is under verification', 'is_verified': False}), 403
+                return jsonify({
                     "message": "Login successful!",
                     "professional": {
                         "id": professional.user_id,
                         "name": professional.name,
                         "email": professional.email,
-                        "role": "Professional"  # Directly access the first role
-
+                        "role": "Professional",  # Directly access the first role
+                        "is_verified": professional.is_verified,
+                        "is_flagged": professional.is_flagged
                     },
                     "authentication_token": user.get_auth_token()  # Generate and return token
                 }), 200
@@ -212,23 +336,18 @@ def login():
                 customer = Customer.query.filter_by(user_id=user.id).first()
                 if customer:
                     if customer.is_blocked:
-                        return jsonify({'message': 'Customer is blocked', 'redirect_url': url_for('block_cust', customer_id=customer.id)}), 403
+                        return jsonify({'message': 'Customer is blocked', 'is_blocked': True}), 403
                     return jsonify({
-                    "message": "Login successful!",
-                    "customer": {
-                        "id": customer.user_id,
-                        "name": customer.name,
-                        "email": customer.email,
-                        "role": "Customer"  # Directly access the first role
-
-                    },
-                    "authentication_token": user.get_auth_token()  # Generate and return token
-                }), 200
-
-                
-            
-                    
-                    # return jsonify({'message': 'Customer login successful', 'redirect_url':url_for('cust_db', user_id=customer.user_id)}), 200
+                        "message": "Login successful!",
+                        "customer": {
+                            "id": customer.user_id,
+                            "name": customer.name,
+                            "email": customer.email,
+                            "role": "Customer",  # Directly access the first role
+                            "is_blocked": customer.is_blocked  # Include blocked status
+                        },
+                        "authentication_token": user.get_auth_token()  # Generate and return token
+                    }), 200
                 else:
                     return jsonify({'message': 'Customer profile not found', 'redirect_url': url_for('register_cdb')}), 404
             elif role.name == 'Admin':
@@ -239,23 +358,11 @@ def login():
                         "id": admin.user_id,
                         "name": admin.name,
                         "role": "Admin"  # Directly access the first role
-
                     },
                     "authentication_token": user.get_auth_token()  # Generate and return token
                 }), 200
         else:
-                return jsonify({
-                    "message": "Login successful!",'redirect_url': url_for('home'),
-                    "user": {
-                        "id": user.id,
-                        "username": user.username,
-                        "email": user.email,
-                        "role": user.roles[0].name  # Directly access the first role
-
-                    },
-                    "authentication_token": user.get_auth_token()  # Generate and return token
-                }), 200
-            
+            return jsonify({"error": "Invalid email or password"}), 401           
 
         
 
@@ -811,7 +918,8 @@ def professionals():
         'id': professional.id,
         'name': professional.name,
         'service_type': professional.service_type,
-        'location': professional.location
+        'location': professional.location,
+        'filename': professional.filename  # Include filename for document link
     } for professional in professionals]
 
     return jsonify({
