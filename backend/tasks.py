@@ -2,6 +2,8 @@ from celery import shared_task
 import datetime
 import csv
 from backend.models import User, Schedule, Transaction, Booking, Customer, Professional
+from backend.utils import format_report
+from backend.mail import send_email
 
 @shared_task(ignore_result=False, name="download_csv_report")
 def csv_report():
@@ -33,8 +35,24 @@ def csv_report():
 
 @shared_task(ignore_result=False, name="monthly_report")
 def monthly_report():
+    users = User.query.all()
+    for user in users[1:]:
+        user_data= {}
+        user_data['username'] = user.username
+        user_data['email'] = user.email
+        user_trans =[]
+        transactions = Transaction.query.filter_by(customer_id=user.id).all()
+        for t in transactions:
+            this_trans = {}
+            this_trans['amount'] = t.amount
+            this_trans['status'] = t.status
+            this_trans['datetime'] = t.datetime
+            user_trans.append(this_trans)
+        user_data['transactions'] = user_trans
+        message = format_report('templates/mail_details.html', user_data)
+        send_email(user.email, subject = "Monthly Report", message= message)
     print("Generating monthly report")
-    return "Monthly report generated successfully"  
+    return "Monthly report sent successfully"  
 
 @shared_task(ignore_result=False, name="daily_reminder")
 def daily_reminder():

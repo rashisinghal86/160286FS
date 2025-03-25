@@ -6,6 +6,13 @@ export default {
           <img src="https://api.dicebear.com/9.x/bottts/svg?seed=Webmaster" width="100" alt="avatar">
       </div>
       <h3 class="text-muted">Welcome, Webmaster {{ admin.name }} </h3>
+      <div class="row">
+            <div class="text-end">
+            <button @click="csv_export" class="btn btn-secondary">Download CSV</button>
+            </div>
+      </div>
+
+
 
       <hr>
       <h4>What would you like to do?</h4>
@@ -77,6 +84,14 @@ export default {
           } catch (error) {
               console.error('Login failed', error);
           }
-      }
-  }
-};
+      },
+        csv_export() {
+            fetch ('/api/export')
+            .then(response => response.json())
+            .then(data => {
+                window.location.href= `/api/csv_result/${data.id}`
+
+                    });
+                }
+            }
+        }

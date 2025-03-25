@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
+from backend.tasks import monthly_report  # Import the monthly_report task
 
 from flask_security import Security, SQLAlchemyUserDatastore
 from extensions import db
@@ -7,6 +8,9 @@ from backend.models import User, Role, add_roles, create_default_admin
 from flask_caching import Cache
 import flask_excel as excel
 from backend.celery_init import celery_init_app
+from celery.schedules import crontab
+
+
 
 
 
@@ -32,6 +36,7 @@ security = Security(app, user_datastore, register_blueprint=False)
 
 # Initialize Celery
 celery = celery_init_app(app)  # Ensure Celery is properly initialized
+celery.autodiscover_tasks()
 
 # Create the database tables and default data
 with app.app_context():
@@ -44,6 +49,14 @@ import backend.routes
 
 #flask-excel
 excel.init_excel(app)
+
+@celery.on_after_finalize.connect
+def setup_periodic_tasks(sender, **kwargs):
+    sender.add_periodic_task(
+        crontab(minute = '*/2'),
+        monthly_report.s(),
+    )
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,5 +1,5 @@
 from app import app
-from flask import jsonify, render_template, request, flash, redirect, url_for, session, send_file
+from flask import jsonify, render_template, request, flash, redirect, url_for, session, send_from_directory
 from backend.models import db, User, Role,Admin, Professional, Customer, Category, Service, Schedule, Transaction, Booking
 
 from flask_security import login_required, roles_required, current_user, login_user, logout_user
@@ -12,7 +12,7 @@ import os
 from werkzeug.utils import secure_filename
 import time
 from celery.result import AsyncResult
-from backend.tasks import csv_report
+from backend.tasks import csv_report, monthly_report
 
 UPLOAD_FOLDER = 'static/uploads'
 
@@ -32,14 +32,15 @@ def export_csv():
 
 @app.route('/api/csv_result/<id>') # just create test result
 def csv_result(id):
-    result = AsyncResult(id)
+    res = AsyncResult(id)
+    return send_from_directory('static', res.result, as_attachment=True)
+
+@app.route('/api/mail')
+def send_reports():
+    res = monthly_report.delay()
     return {
-        "ready": result.ready(),
-        "successfull": result.successful(),
-        "result": result.result if result.ready() else None
+        "result": res.result
     }
-
-
 #----- home page-----
 @app.route('/api/users', methods=['GET'])
 def get_users():
