@@ -6,7 +6,6 @@ export default {
           <img src="https://api.dicebear.com/9.x/bottts/svg?seed=Webmaster" width="100" alt="avatar">
       </div>
       <h3 class="text-muted">Welcome, Webmaster {{ admin.name }} </h3>
-      <button class="btn btn-primary" @click="create_csv">get</button>
 
       <hr>
       <h4>What would you like to do?</h4>
@@ -59,26 +58,7 @@ export default {
       };
   },
   
-  methods: { 
-    async create_csv(){
-        const res = await fetch(location.origin + '/create_csv', {
-            
-        })
-        const task_id = (await res.json()).task_id
-
-        const interval = setInterval(async() => {
-            const res = await fetch(`${location.origin}/get_csv/${task_id}` )
-            if (res.ok){
-                console.log('data is ready')
-                window.open(`${location.origin}/get_csv/${task_id}`)
-                clearInterval(interval)
-            }
-
-        }, 100)
-    },
-
-
-    
+  methods: {     
     async submitlogin() {
           try {
               const response = await fetch(location.origin+'/login', {

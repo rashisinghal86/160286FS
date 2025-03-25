@@ -10,10 +10,9 @@ from functools import wraps
 from flask_security.utils import verify_and_update_password, login_user
 import os
 from werkzeug.utils import secure_filename
-from backend.celery.tasks import add, create_csv
-from celery.result import AsyncResult
 import time
-
+from celery.result import AsyncResult
+from backend.tasks import csv_report
 
 UPLOAD_FOLDER = 'static/uploads'
 
@@ -25,6 +24,21 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
     
+#----------------------celery tasks---------------------
+@app.route('/api/export') #manuallytriggers
+def export_csv():
+    result = csv_report.delay() 
+    return jsonify({'id': result.id,}), 202
+
+@app.route('/api/csv_result/<id>') # just create test result
+def csv_result(id):
+    result = AsyncResult(id)
+    return {
+        "ready": result.ready(),
+        "successfull": result.successful(),
+        "result": result.result if result.ready() else None
+    }
+
 
 #----- home page-----
 @app.route('/api/users', methods=['GET'])
@@ -55,68 +69,6 @@ import logging
 
 
 
-
-
-@app.get('/celery')
-def celery():
-    task = add.delay(10, 20)
-    return {'task_id' : task.id}
-
-@app.get('/getcelerydata/<id>')
-def getData(id):
-    result = AsyncResult(id)
-    if result.ready():
-        return {'result': result.result}
-    else:
-        return {'status': 'processing'}
-
-# Route to create a CSV file    
-@app.get('/create_csv')
-def createCSV():
-    task = create_csv.delay()
-    return {'task_id': task.id}, 200
-# Route to get the CSV file
-@app.get('/get_csv/<id>')
-def getCSV(id):
-    result = AsyncResult(id)
-    time.sleep(5)    
-    if result.ready():
-        filename = result.result
-        return send_file(f'./backend/celery/user-downloads/{filename}', as_attachment=True)
-    return {'status': 'processing'}
-
-# @app.get('/get_csv/<task_id>')
-# def getCSV(task_id):
-#     result = AsyncResult(task_id)
-#     logging.info(f'Task ID: {task_id}, State: {result.state}, Result: {result.result}')
-#     if result.ready():
-#         file_path = f'./backend/celery/user-downloads/{result.result}'
-#         if os.path.exists(file_path):
-#             logging.info(f'File found: {file_path}')
-#             return send_file(file_path, as_attachment=True), 200
-#         else:
-#             logging.error(f'File not found: {file_path}')
-#             return {'status': 'file not found'}, 404
-#     else:
-#         logging.info(f'Task {task_id} is still processing.')
-#         return {'status': 'incomplete'}, 202
-
-# ----------------------------------------------------------------------
-@app.route('/api/export') #this manually triggers the task
-def export_csv():
-    """API to export a CSV file."""
-    result = create_csv.delay() #async object id, task id,result
-    return jsonify({'id': result.id, "result": result.result}), 200
-
-@app.route('/api/csv_result/<id>') #just to check the status of the task
-def csv_result(id):
-    """API to get the result of a CSV export task."""
-    result = AsyncResult(id)
-    return {
-        "ready" : result.ready(),
-        "successful" : result.successful(),
-        "value" : result.result if result.ready() else None
-    }
 
 
 # @app.route('/login', methods=['GET', 'POST'])
