@@ -57,7 +57,7 @@ export default {
         },
         async confirmSchedule(id) {
             try {
-                const response = await fetch(`/api/schedule/confirm/${id}`, { // Fixed dynamic URL
+                const response = await fetch(`/api/schedule/${id}/confirm`, { // Fixed dynamic URL
                     method: 'POST'
                 });
         

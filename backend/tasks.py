@@ -4,7 +4,9 @@ import csv
 from backend.models import User, Schedule, Transaction, Booking, Customer, Professional
 from backend.utils import format_report
 from backend.mail import send_email
+import requests 
 
+#async triggered job on click of button download 
 @shared_task(ignore_result=False, name="download_csv_report")
 def csv_report():
     users = User.query.all()
@@ -33,6 +35,7 @@ def csv_report():
     print("Downloading CSV report")
     return "CSV report downloaded successfully"
 
+#async scheduled job
 @shared_task(ignore_result=False, name="monthly_report")
 def monthly_report():
     users = User.query.all()
@@ -54,7 +57,15 @@ def monthly_report():
     print("Generating monthly report")
     return "Monthly report sent successfully"  
 
-@shared_task(ignore_result=False, name="daily_reminder")
-def daily_reminder():
-    print("Sending daily reminder to users")
+#async triggerd job with webhook. when status of transaction is updated to completed
+@shared_task(ignore_result=False, name="daily_reminder") #will be sent to customer only after the booking is completed
+def delivery_report(username):
+    text = f"Good morning {username}! Thankyou for choosing us. please check the app at http://127.0.0.1:5000/login"
+    response = requests.post(
+        "https://chat.googleapis.com/v1/spaces/AAAAB51GcLo/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=vbx-B0Kjwr9438S2Q0-WuVHzd6qVshGYhDGz0MJ-aOs",
+        headers={"Content-Type": "application/json"},
+        json={"text": text},
+    )
+    print(response.status_code)
     return "Daily reminder sent successfully"
+

@@ -1,18 +1,16 @@
 from app import app
 from flask import jsonify, render_template, request, flash, redirect, url_for, session, send_from_directory
 from backend.models import db, User, Role,Admin, Professional, Customer, Category, Service, Schedule, Transaction, Booking
-
 from flask_security import login_required, roles_required, current_user, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
-
 from flask_security.utils import verify_and_update_password, login_user
 import os
 from werkzeug.utils import secure_filename
-import time
+# from flask_caching import Cache
 from celery.result import AsyncResult
-from backend.tasks import csv_report, monthly_report
+from backend.tasks import csv_report, monthly_report, delivery_report
 
 UPLOAD_FOLDER = 'static/uploads'
 
@@ -2682,6 +2680,64 @@ def delete_schedule(id):
 #         # return redirect(url_for('pending_booking'))
 #         return render_template('prof_booking.html',transactions=Transaction.query.filter_by(professional_id=professional.id).all())
 
+@app.route('/api/schedule/<int:id>/confirm', methods=['POST'])
+def confirm_schedule(id):
+    # Ensure user is logged in
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    # Ensure user is a professional
+    if user.role_id != 2:
+        return jsonify({"error": "Access denied. Only professionals can confirm schedules."}), 403
+
+    professional = Professional.query.filter_by(user_id=user.id).first()
+    if not professional:
+        return jsonify({"error": "Professional profile not found"}), 404
+
+    # Fetch schedule
+    schedule = Schedule.query.get(id)
+    if not schedule or schedule.is_accepted:
+        return jsonify({"error": "No pending schedule to accept"}), 400
+
+    # Create transaction
+    transaction = Transaction(
+        customer_id=schedule.customer_id,
+        professional_id=professional.id,
+        amount=0,  # Initial amount, will be updated below
+        datetime=datetime.now(),
+        status='Accepted'
+    )
+
+    # Update transaction amount based on service price
+    service = Service.query.get(schedule.service_id)
+    if service:
+        transaction.amount += float(service.price)
+
+    # Create booking
+    booking = Booking(
+        transaction=transaction,
+        service=schedule.service,
+        location=schedule.location,
+        date_of_completion=schedule.schedule_datetime.date(),
+        rating=None,
+        remarks=None
+    )
+
+    # Update database
+    db.session.add(booking)
+    db.session.delete(schedule)
+    db.session.add(transaction)
+    db.session.commit()
+
+    return jsonify({
+        "message": "Schedule confirmed successfully",
+        "transaction_id": transaction.id
+    }), 200
+
 # @app.route('/bookings')
 # @login_required
 # def bookings():
@@ -2717,6 +2773,7 @@ def delete_schedule(id):
 #         return redirect(url_for('home')) 
 # from flask import Flask, jsonify, session
 @app.route('/api/bookings', methods=['GET'])
+# @cache.cached(timeout=300, key_prefix="transactions_cache") 
 @login_required
 def api_bookings():
     user = User.query.get(session['user_id'])
@@ -2972,8 +3029,10 @@ def api_rate_booking(id):
     booking.rating = int(rating)
     booking.remarks = remarks
     db.session.commit()
-
-    return jsonify({'message': 'Booking rated successfully'}), 200
+    username = User.query.get(transaction.customer_id).username
+    result = delivery_report.delay(username=username)
+    print(result)
+    return ({'message': 'Booking rated successfully'}), 200
 
 
 

@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
-from backend.tasks import monthly_report  # Import the monthly_report task
+from backend.tasks import monthly_report, delivery_report  # Import the monthly_report task
 
 from flask_security import Security, SQLAlchemyUserDatastore
 from extensions import db
@@ -53,10 +53,16 @@ excel.init_excel(app)
 @celery.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(
-        crontab(minute = '*/2'),
+        crontab(minute = '*/120'),
         monthly_report.s(),
     )
 
+# @celery.on_after_finalize.connect
+# def setup_periodic_tasks(sender, **kwargs):
+#     sender.add_periodic_task(
+#         crontab(minute = '*/120'),
+#         delivery_report.s(), #schedule the status of booking  to run every 2 hours
+#     )
 
 if __name__ == '__main__':
     app.run(debug=True)
