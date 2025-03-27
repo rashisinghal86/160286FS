@@ -1,3 +1,4 @@
+
 export default {
   template: `
     <div class="container mt-5">
@@ -7,10 +8,7 @@ export default {
         <!-- Include search bar component -->
         <SearchBar />
         <br>
-        <router-link to="/manage-customers" class="btn btn-primary">
-          <i class="fa fa-angle-left"></i>
-          Back
-        </router-link>
+        
         <hr>
         <h5 class="display-5 text-center mt-5">Search from all Registered Customers</h5>
         <div class="customers-list">
@@ -19,8 +17,10 @@ export default {
               <thead class="thead-dark">
                 <tr>
                   <th style="width: 20%">Name</th>
-                  <th style="width: 40%">Location</th>
+                  <th style="width: 20%">Location</th>
                   <th style="width: 30%">Actions</th>
+                  <th style="width: 20%">Delete USER</th>
+
                 </tr>
               </thead>
               <tbody>
@@ -28,12 +28,18 @@ export default {
                   <td>{{ customer.name }}</td>
                   <td>{{ customer.location }}</td>
                   <td>
-                    <button @click="blockCustomer(customer.id)" class="btn btn-danger btn-sm">
+                    <button v-if="!customer.is_blocked" @click="blockCustomer(customer.id)" class="btn btn-danger btn-sm">
                       <i class="fa-solid fa-circle-xmark"></i> Block
                     </button>
-                    <button @click="unblockCustomer(customer.id)" class="btn btn-warning btn-sm">
+                    <button  v-if="customer.is_blocked" @click="unblockCustomer(customer.id)" class="btn btn-warning btn-sm">
                       <i class="fa-solid fa-circle-check"></i> Unblock
                     </button>
+                  </td>
+                  <td>
+                    <button @click="delete_user(customer.id)" class="btn btn-primary rounded-pill btn-sm">
+                    <i class="fa-solid fa-user-slash"></i> Delete
+                  </button>
+                  
                   </td>
                 </tr>
               </tbody>
@@ -67,8 +73,11 @@ export default {
           headers: { 'Content-Type': 'application/json' }
         });
 
-        if (response.ok) this.fetchCustomers();
+        if (response.ok) {
+          
         window.alert('Customer blocked successfully');
+        this.fetchCustomers();
+        }
       } catch (error) {
         console.error('Error blocking customer:', error);
       }
@@ -80,10 +89,32 @@ export default {
           headers: { 'Content-Type': 'application/json' }
         });
 
-        if (response.ok) this.fetchCustomers();
-        window.alert('Customer unblocked successfully');
+        if (response.ok){
+          window.alert('Customer unblocked successfully');
+          this.fetchCustomers();
+
+        } 
       } catch (error) {
         console.error('Error unblocking customer:', error);
+      }
+    },
+    async delete_user(id) {
+      try {
+        const response = await fetch(`/api/admin/delete_customer/${id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+    
+        if (response.ok) {
+          window.alert('Customer deleted successfully!');
+          this.fetchCustomers(); // Refresh the list after deletion
+        } else {
+          const errorData = await response.json();
+          window.alert(`Deletion failed: ${errorData.error || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error deleting Customer:', error);
+        window.alert('An error occurred while deleting the Customer.');
       }
     }
   },

@@ -837,27 +837,16 @@ def upload_professional_file():
         return jsonify({'error': 'Internal Server Error', 'details': str(e)}), 500
 
 
-# @app.route('/admin/professionals')
-# @roles_required('admin')
-# def professionals():   
-#     professionals=Professional.query.all()
-#     pname = request.args.get('pname') or ''
-#     pservice_type = request.args.get('pservice_type') or ''
-#     plocation = request.args.get('plocation') or ''
-#     print(pname, pservice_type, plocation)
-
-#     if pname:
-#         professionals = Professional.query.filter(Professional.name.ilike(f'%{pname}%')).all()
-#     return render_template('professionals.html', professionals=professionals, pname=pname, pservice_type=pservice_type, plocation=plocation)
-
+#---------admin prof management routes-------------------
+#search
 @app.route('/api/admin/professionals', methods=['GET'])
-@roles_required('Admin')  # If you want to enforce admin role, you can use this
+@login_required
+@roles_required('Admin')  
 def professionals():
     pname = request.args.get('pname') or ''
     pservice_type = request.args.get('pservice_type') or ''
     plocation = request.args.get('plocation') or ''
 
-    # Fetch professionals with the given filters
     query = Professional.query
 
     if pname:
@@ -867,9 +856,8 @@ def professionals():
     if plocation:
         query = query.filter(Professional.location.ilike(f'%{plocation}%'))
 
-    professionals = query.all()
+    professionals = Professional.query.all()
 
-    # Prepare the list of professionals to send as response
     professionals_list = [{
         'id': professional.id,
         'name': professional.name,
@@ -877,7 +865,7 @@ def professionals():
         'location': professional.location,
         'filename': professional.filename,
          'is_verified': professional.is_verified,
-         'is_flagged': professional.is_flagged # Include filename for document link
+         'is_flagged': professional.is_flagged 
     } for professional in professionals]
 
     return jsonify({
@@ -902,7 +890,6 @@ def pending_professionals():
     approved_professionals = Professional.query.filter_by(is_verified=True).all()
     blocked_professionals = Professional.query.filter_by(is_flagged=True).all()
 
-    # Prepare data to return
     pending_list = [{'id': prof.id, 'name': prof.name, 'service_type': prof.service_type, 
                      'location': prof.location, 'experience': prof.experience, 'filename': prof.filename} 
                     for prof in pending_professionals]
@@ -920,19 +907,10 @@ def pending_professionals():
         'approved_professionals': approved_list,
         'blocked_professionals': blocked_list
     }), 200
-# # Admin route to approve professional
-# @app.route('/admin/approve_professional/<int:id>', methods=['POST'])
-# @roles_required('admin')
-# def approve_professional(id):    
-#     professional = Professional.query.get(id)
-#     if professional:
-#         professional.is_verified = True
-#         #professional.is_flagged = True
-#         db.session.commit()
-#         flash(f'Professional {professional.name} approved successfully')
-#     return redirect(url_for('pending_professionals'))
+
 @app.route('/api/admin/approve_professional/<int:id>', methods=['POST'])
-# @roles_required('admin')
+@login_required
+@roles_required('Admin')
 def approve_professional(id):
     """API endpoint to approve a professional"""
     try:
@@ -949,22 +927,10 @@ def approve_professional(id):
         print("Error:", str(e))  # Log error to console
         return jsonify({'error': 'Internal Server Error', 'details': str(e)}), 500
 
-# # Admin route to block professional
-# @app.route('/admin/block_professional/<int:id>', methods=['POST'])
-# @roles_required('admin')
-# def block_professional(id):    
-#     professional = Professional.query.get(id)
-#     if professional:
-#         professional.is_flagged = True
-       
-#         professional.is_verified = False
-#         db.session.commit()
-#         flash(f'Professional {professional.name} blocked successfully')
-#     return redirect(url_for('pending_professionals'))
 
 @app.route('/api/admin/block_professional/<int:id>', methods=['POST'])
-# @login_required
-# @roles_required('admin')
+@login_required
+@roles_required('Admin')
 def block_professional(id):
     professional = Professional.query.get(id)
     if not professional:
@@ -982,26 +948,15 @@ def block_professional(id):
         'is_verified': professional.is_verified
     }), 200
 
-# # Admin route to unblock professional
-# @app.route('/admin/unblock_professional/<int:id>', methods=['POST'])
-# @roles_required('admin')
-# def unblock_professional(id):   
-#     professional = Professional.query.get(id)
-#     if professional:
-#         professional.is_flagged = False
-#         db.session.commit()
-#         flash(f'Professional {professional.name} unblocked successfully')
-#     return redirect(url_for('pending_professionals'))
 
 @app.route('/api/admin/unblock_professional/<int:id>', methods=['POST'])
-# @login_required
-# @roles_required('admin')
+@login_required
+@roles_required('Admin')
 def unblock_professional(id):
     professional = Professional.query.get(id)
     if not professional:
         return jsonify({'error': 'Professional not found'}), 404
 
-    # Unblock the professional
     professional.is_flagged = False
     db.session.commit()
 
@@ -1010,10 +965,7 @@ def unblock_professional(id):
         'professional_id': professional.id,
         'status': 'unblocked'
     }), 200
-
-
-# #  professional dashboard link to show all the appointments- accept/ reject
-    
+ #-------------------------------------------------#   
 
 
 
@@ -1098,20 +1050,12 @@ def register_cdb_post():
     }), 201  # HTTP status code for Created
 
 # #Admin route to search customers and blocked/unblocked.
-# @app.route('/admin/customers')
-# @login_required
-# def customers():  
-#     customers=Customer.query.all()
-#     cname = request.args.get('cname') or ''
-#     clocation = request.args.get('clocation') or ''
-#     print(cname, clocation)
-
-#     if cname:
-#         customers = Customer.query.filter(Customer.name.ilike(f'%{cname}%')).all()
-#     return render_template('customers.html', customers=customers, cname=cname, clocation=clocation)
 @app.route('/api/admin/customers', methods=['GET'])
+@login_required
+@roles_required('Admin')
 def get_customers():
-    # Ensure the user is authenticated and has the proper role (Admin)
+
+
     # if not current_user.is_authenticated or current_user.role.name != 'Admin':
     #     return jsonify({'error': 'Unauthorized access'}), 403  
 
@@ -1132,23 +1076,17 @@ def get_customers():
     customer_list = [{
         'id': customer.id,
         'name': customer.name,
-        'location': customer.location
+        'location': customer.location,
+        'is_blocked': customer.is_blocked
+
     } for customer in customers]
 
     return jsonify(customer_list), 200
 
-# #admin route to manage customers
-#admin route to manage customers
-# @app.route('/admin/manage_customers')
-# @roles_required('admin'
-# def manage_customers():   
-#     unblocked_customers = Customer.query.filter_by(is_blocked=False).all()
-#     blocked_customers = Customer.query.filter_by(is_blocked=True).all()
-
-#     return render_template('manage_customers.html',unblocked_customers=unblocked_customers, blocked_customers=blocked_customers)
 
 @app.route('/api/admin/manage_customers', methods=['GET'])
-# @roles_required('admin')
+@login_required
+@roles_required('Admin')
 def manage_customers():
     unblocked_customers = Customer.query.filter_by(is_blocked=False).all()
     blocked_customers = Customer.query.filter_by(is_blocked=True).all()
@@ -1175,18 +1113,11 @@ def manage_customers():
         'unblocked_customers': unblocked_customers_data,
         'blocked_customers': blocked_customers_data
     }), 200
+
 # # Admin route to unblock customer
-# @app.route('/admin/unblock_customer/<int:id>', methods=['POST'])
-# @roles_required('admin')
-# def unblock_customer(id):
-#     customer = Customer.query.get(id)
-#     if customer:
-#         customer.is_blocked = False
-#         db.session.commit()
-#         flash(f'Customer {customer.name} unblocked successfully')
-#     return redirect(url_for('manage_customers'))  
 @app.route('/api/admin/unblock_customer/<int:id>', methods=['POST'])
-# @roles_required('admin')  # Uncomment this if role-based access is needed
+@login_required
+@roles_required('Admin')
 def api_unblock_customer(id):
     customer = Customer.query.get(id)
     
@@ -1200,18 +1131,9 @@ def api_unblock_customer(id):
 
 
 # # Admin route to block customer
-# @app.route('/admin/block_customer/<int:id>', methods=['POST'])
-# @roles_required('admin')
-# def block_customer(id):   
-#     customer = Customer.query.get(id)
-#     if customer:
-#         customer.is_blocked = True
-       
-#         db.session.commit()
-#         flash(f'Customer {customer.name} blocked successfully')
-#     return redirect(url_for('manage_customers'))
 @app.route('/api/admin/block_customer/<int:id>', methods=['POST'])
-# @roles_required('admin')  # Uncomment when role-based access control is handled
+@login_required
+@roles_required('Admin')
 def block_customer(id):   
     customer = Customer.query.get(id)
     
@@ -1222,6 +1144,31 @@ def block_customer(id):
     db.session.commit()
     
     return jsonify({"message": f"Customer {customer.name} blocked successfully"}), 200
+
+
+@app.route('/api/admin/delete_customer/<int:id>', methods=['DELETE'])
+def delete_customer(id):
+    customer = Customer.query.get(id)
+    if not customer:
+        return jsonify({'error': 'Customer not found'}), 404
+
+    # Get the user associated with the customer
+    user = User.query.filter_by(id=customer.user_id).first()
+
+    # Delete the customer entry
+    db.session.delete(customer)
+
+    # Delete the corresponding user entry if found
+    if user:
+        db.session.delete(user)
+
+    db.session.commit()
+
+    return jsonify({
+        'message': f'Customer {id} and associated user deleted successfully',
+        'customer_id': id,
+        'user_id': user.id if user else None
+    }), 200
 
 # # ------------------------------------------------------------------------#  
 
@@ -1318,22 +1265,29 @@ def signout():
 #         print("User not found.")
 
 #     return render_template('homecss.html')
-@app.route('/api/delete/prof', methods=['DELETE'])
-@login_required
-def delete_prof():
-    user = User.query.get(session.get('user_id'))
+@app.route('/api/admin/delete_professional/<int:id>', methods=['DELETE'])
+def delete_professional(id):
+    professional = Professional.query.get(id)
+    if not professional:
+        return jsonify({'error': 'Professional not found'}), 404
 
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+    # Get the user associated with the professional
+    user = User.query.filter_by(id=professional.user_id).first()
 
-    professional = Professional.query.filter_by(user_id=user.id).first()
-    if professional:
-        db.session.delete(professional)
+    # Delete the professional entry
+    db.session.delete(professional)
 
-    db.session.delete(user)
+    # Delete the corresponding user entry if found
+    if user:
+        db.session.delete(user)
+
     db.session.commit()
 
-    return jsonify({"message": "User and professional profile deleted successfully"}), 200
+    return jsonify({
+        'message': f'Professional {id} and associated user deleted successfully',
+        'professional_id': id,
+        'user_id': user.id if user else None
+    }), 200
 
 # @app.route('/delete/cust')
 # @login_required

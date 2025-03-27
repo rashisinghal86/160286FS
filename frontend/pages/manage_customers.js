@@ -2,10 +2,7 @@ export default {
     name: 'ManageCustomers',
     template: `
       <div class="container mt-4">
-        <h2 class="display-4">Customer Management</h2>
-        <router-link to="/admin_db" class="btn btn-primary">
-          <i class="fa fa-angle-left"></i> back
-        </router-link>
+        
         <router-link to="/customers" class="btn btn-outline-primary">
           <i class="fa fa-search"></i> Search Customers
         </router-link>

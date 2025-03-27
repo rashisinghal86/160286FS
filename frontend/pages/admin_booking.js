@@ -8,50 +8,10 @@ export default {
 
         <h1 class="display-4">Admin Overview</h1>
         <hr>
-        <button class="btn btn-danger" @click="goToDeleteUser" style="float: right;">
-            <i class="fa-solid fa-user-slash"></i> Delete Customer/Professional Account Permanently
-        </button>
         <br>
-
-        <h2>Customers</h2>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Unique ID</th>
-                    <th>Customer Name</th>
-                    <th>Location</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="customer in customers" :key="customer.user_id">
-                    <td>{{ customer.user_id }}</td>
-                    <td>{{ customer.name }}</td>
-                    <td>{{ customer.location }}</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <h2>Professionals</h2>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Unique ID</th>
-                    <th>Professional Name</th>
-                    <th>Location</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="professional in professionals" :key="professional.user_id">
-                    <td>{{ professional.user_id }}</td>
-                    <td>{{ professional.name }}</td>
-                    <td>{{ professional.location }}</td>
-                </tr>
-            </tbody>
-        </table>
-
         <h2>Schedules in Waiting</h2>
         <table class="table table-striped">
-            <thead>
+            <thead class="thead-light">
                 <tr>
                     <th>Schedule ID</th>
                     <th>Service Name</th>
@@ -73,7 +33,7 @@ export default {
 
         <h2>Bookings</h2>
         <table class="table table-striped">
-            <thead>
+            <thead class="thead-light">
                 <tr>
                     <th>Booking ID</th>
                     <th>Service Type</th>
@@ -105,6 +65,44 @@ export default {
                 </template>
             </tbody>
         </table>
+        <div class="container mt-4">
+        <h2>List of Customers</h2>
+        <table class="table table-striped">
+            <thead class="thead-light">
+                <tr>
+                    <th>Customer ID</th>
+                    <th>Customer Name</th>
+                    <th>Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="customer in customers" :key="customer.user_id">
+                    <td>{{ customer.user_id }}</td>
+                    <td>{{ customer.name }}</td>
+                    <td>{{ customer.location }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2> List of Professionals</h2>
+        <table class="table table-striped">
+            <thead class="thead-light">
+                <tr>
+                    <th>Professional ID</th>
+                    <th>Professional Name</th>
+                    <th>Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="professional in professionals" :key="professional.user_id">
+                    <td>{{ professional.user_id }}</td>
+                    <td>{{ professional.name }}</td>
+                    <td>{{ professional.location }}</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        
     </div>
     `,
     data() {
@@ -140,9 +138,7 @@ export default {
         printPage() {
             window.print();
         },
-        goToDeleteUser() {
-            this.$router.push('/delete_user');
-        }
+   
     },
     async created() {
         await this.fetchAdminData();

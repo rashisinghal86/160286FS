@@ -4,9 +4,7 @@ export default {
       <h2 class="display-4">Professionals Management</h2>
       <hr>
       <div class="button-group">
-        <router-link to="/admin_db" class="btn btn-primary">
-          <i class="fa fa-angle-left"></i> Back
-        </router-link>
+       
         <router-link to="/professionals" class="btn btn-outline-primary">
           <i class="fa fa-search"></i> Search Professionals
         </router-link>
@@ -156,7 +154,10 @@ export default {
           headers: { 'Content-Type': 'application/json' }
         });
 
-        if (response.ok) this.fetchProfessionals();
+        if (response.ok){
+          window.alert('Professional approved successfully');
+        this.fetchProfessionals();
+        }
       } catch (error) {
         console.error(error);
       }
@@ -169,7 +170,10 @@ export default {
           headers: { 'Content-Type': 'application/json' }
         });
 
-        if (response.ok) this.fetchProfessionals();
+        if (response.ok) {
+          window.alert('Professional blocked successfully');
+          this.fetchProfessionals();
+        }
       } catch (error) {
         console.error(error);
       }
@@ -182,7 +186,10 @@ export default {
           headers: { 'Content-Type': 'application/json' }
         });
 
-        if (response.ok) this.fetchProfessionals();
+        if (response.ok) {
+          window.alert('Professional unblocked successfully');
+          this.fetchProfessionals();
+        }
       } catch (error) {
         console.error(error);
       }

@@ -3,14 +3,13 @@ export default {
     <div class="container mt-5">
       <div class="container mt-4">
         <h2 class="display-4">Search Professionals</h2>
+        <hr>
+        
         <br>
 
-        <searchbar2></searchbar2>
+        
         <br>
-        <a href="/pending_professionals" class="btn btn-primary">
-          <i class="fa fa-angle-left"></i>
-          Back
-        </a>
+       
         <hr>
         <h5 class="display-5 text-center mt-5">Search from all Registered Professionals</h5>
 
@@ -24,6 +23,7 @@ export default {
                   <th>Service Type</th>
                   <th>Document</th>
                   <th>Actions</th>
+                  <th>Delete USER</th>
                 </tr>
               </thead>
               <tbody>
@@ -36,15 +36,22 @@ export default {
                   </td>
                   <td>
 
-                    <button  v-if="!professional.is_verified" @click="approveProfessional(professional.id)" class="btn btn-success btn-sm">
+                    <button  v-if="!professional.is_verified" @click="approveProfessional(professional.id)" class="btn btn-success rounded-pill btn-sm">
                       <i class="fa-solid fa-thumbs-up"></i> Approve
                     </button>
-                    <button v-if="professional.is_verified" @click="blockProfessional(professional.id)" class="btn btn-danger btn-sm">
+                    <button v-if="professional.is_verified && !professional.is_flagged " @click="blockProfessional(professional.id)" class="btn btn-danger rounded-pill btn-sm">
                       <i class="fa-solid fa-thumbs-down"></i> Block
                     </button>
-                    <button v-if="professional.is_flagged" @click="unblockProfessional(professional.id)" class="btn btn-secondary btn-sm">
+                    <button v-if="professional.is_flagged" @click="unblockProfessional(professional.id)" class="btn btn-secondary rounded-pill btn-sm">
                       <i class="fa-solid fa-thumbs-up"></i> Unblock
+                    </button>
                   </td>
+                   <td>
+                    <button @click="delete_user(professional.id)" class="btn btn-primary rounded-pill btn-sm">
+  <i class="fa-solid fa-user-slash"></i> Delete
+</button>
+
+                  </td> 
                 </tr>
               </tbody>
             </table>
@@ -120,9 +127,29 @@ export default {
       } catch (error) {
         console.error('Error unblocking professional:', error);
       }
+    },
+    async delete_user(id) {
+      try {
+        const response = await fetch(`/api/admin/delete_professional/${id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+    
+        if (response.ok) {
+          window.alert('Professional deleted successfully!');
+          this.fetchProfessionals(); // Refresh the list after deletion
+        } else {
+          const errorData = await response.json();
+          window.alert(`Deletion failed: ${errorData.error || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error deleting professional:', error);
+        window.alert('An error occurred while deleting the professional.');
+      }
     }
-  },
+      },
   mounted() {
     this.fetchProfessionals();
   }
+
 };
