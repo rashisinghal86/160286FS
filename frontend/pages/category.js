@@ -10,6 +10,8 @@ export default {
             <div class="form-group text-center mt-3">
               <label for="name" class="form-label"></label>
               <input v-model="name" type="text" id="name" placeholder="Add ServiceCategory_Type Name Here" class="form-control" required>
+              
+              <br>
               <button type="submit" class="btn btn-success">
                 <i class="fa-solid fa-plus"></i> Add Type
               </button>
@@ -17,7 +19,7 @@ export default {
           </form>
   
           <!-- CATEGORY LIST -->
-          <h5 class="display-5 text-center mt-5">List of Authorized Service_Types</h5>
+          <h5 class="display-5 text-center mt-5">Listed Service_Types</h5>
           <table class="table table-striped mt-3">
             <thead>
               <tr>
@@ -93,20 +95,12 @@ export default {
           
           const data = await response.json();
           
-          console.log(data); // Debugging
-          
-         
-  
-          // Navigate to the service details page
+          console.log(data);
           this.$router.push({ path: `/categories/${categoryId}/services` });
         } catch (error) {
           console.error('Error:', error);
         }
       },
-  
-             
-    
-
       async fetchCategories() {
         try {
           const token = localStorage.getItem('token');
@@ -142,8 +136,10 @@ export default {
           });
           if (response.ok) {
             this.name = '';
+            window.alert('ServiceCategory_Type Added Successfully');
             this.fetchCategories();
           } else {
+            window.alert('ServiceCategory Already Exists, try a different name');
             console.error('Failed to add category');
           }
         } catch (error) {
@@ -157,8 +153,10 @@ export default {
             method: 'DELETE'
           });
           if (response.ok) {
+            window.alert('ServiceCategory_Type Deleted Successfully');
             this.fetchCategories();
           } else {
+            window.alert('ServiceCategory_Type Not Found');
             console.error('Failed to delete category');
           }
         } catch (error) {
@@ -183,8 +181,10 @@ export default {
           });
           if (response.ok) {
             this.closeEditModal();
+            window.alert('ServiceCategory_Type Updated Successfully');
             this.fetchCategories();
           } else {
+            window.alert('Failed to update category,try again');
             console.error('Failed to update category');
           }
         } catch (error) {

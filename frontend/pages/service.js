@@ -8,23 +8,24 @@ export default {
         <hr>
         <div class="container mt-1"></div>
         <div class="heading text-center">
-          <h2 class="display-5">Click here to add more services</h2>
+          <h5 class="display-5 text-muted">Click here to add services
           <button class="btn btn-success" @click="openAddModal">
             <i class="fa5 fa-plus"></i>
             Add Service
           </button>
+          </h5>
         </div>
         
-        <h5 class="display-5 text-center mt-5">List of Authorized Services</h5>
+        <h5 class="display-3 text-center mt-5">Listed Services</h5>
         <table class="table table-striped mt-3">
           <thead>
             <tr>
               <th style="width: 10%">Service ID</th>
-              <th style="width: 15%">Service Name</th>
+              <th style="width: 10%">Service Name</th>
               <th style="width: 10%">Service Type</th>
-              <th style="width: 40%; text-align:center;">Description</th>
-              <th style="width: 10%">Price (Base Price)</th>
-              <th style="width: 15%">Management Tools</th>
+              <th style="width: 25%; text-align:center;">Description</th>
+              <th style="width: 10%">Price</th>
+              <th style="width: 35%">Management Tools</th>
             </tr>
           </thead>
           <tbody>
@@ -187,6 +188,7 @@ export default {
           }),
         });
         if (response.ok) {
+          window.alert('Service added successfully');
           this.fetchCategory();
           this.closeAddModal();
         } else {
@@ -217,6 +219,7 @@ export default {
           body: JSON.stringify(this.editService),
         });
         if (response.ok) {
+          window.alert('Service updated successfully');
           this.fetchCategory();
           this.closeEditModal();
         } else {
@@ -233,6 +236,7 @@ export default {
           method: 'DELETE',
         });
         if (response.ok) {
+          window.alert('Service deleted successfully');
           this.fetchCategory();
         } else {
           console.error('Failed to delete service:', response.statusText);

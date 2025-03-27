@@ -1855,6 +1855,7 @@ def admin_db():
 # Create a New Category (POST)check1:
 @app.route('/api/category', methods=['POST'])
 @login_required
+@roles_required('Admin')
 def add_category():
     data = request.get_json()
     name = data.get('name')
@@ -1874,6 +1875,7 @@ def add_category():
 
 @app.route('/api/category/<int:id>', methods=['GET'])
 @login_required
+@roles_required('Admin')
 def get_category(id):
     category = Category.query.get(id)
     if not category:
@@ -1887,6 +1889,7 @@ def get_category(id):
 #all categories fetch 
 @app.route('/api/category', methods=['GET'])
 @login_required
+@roles_required('Admin')
 def get_categories():
     categories = Category.query.all()
     print(categories)
@@ -1907,6 +1910,7 @@ def get_categories():
 #  update a category(PUT)
 @app.route('/api/category/<int:id>', methods=['PUT'])
 @login_required
+@roles_required('Admin')
 def update_category(id):
     category = Category.query.get(id)
     if not category:
@@ -1926,6 +1930,7 @@ def update_category(id):
 # delete a category (DELETE)
 @app.route('/api/category/<int:id>', methods=['DELETE'])
 @login_required
+@roles_required('Admin')
 def delete_category(id):
     category = Category.query.get(id)
     if not category:
@@ -1939,130 +1944,9 @@ def delete_category(id):
 
 
 # #----------- Add services packages in a category-----------------------------------
-# @app.route('/service/add/<int:category_id>')
-# @roles_required('admin')
-# def add_service(category_id):
-#     category=Category.query.get(category_id)
-#     categories=Category.query.all() 
-#     if not category:
-#         flash('Service_Type does not exist')
-#         return redirect(url_for('admin_db'))
-    
-#     return render_template('service/add.html', category=category, categories=categories)
-
-# @app.route('/service/add/', methods=['POST'])
-# @roles_required('admin')
-# def add_service_post():
-#     name = request.form.get('name')
-#     category_id = request.form.get('category_id')
-#     type = request.form.get('type')
-#     description = request.form.get('description')
-#     price = request.form.get('price')
-#     location = request.form.get('location')
-#     duration = request.form.get('duration')
-    
-#     category = Category.query.get(category_id)
-
-#     if not category:
-#         flash('Service_Type does not exist')
-#         return redirect(url_for('admin_db'))
-#     if not name or not price or not type or not description or not location or not duration:
-#         flash('Please fill out the fields')
-#         return redirect(url_for('add_service', category_id=category_id))
-    
-#     try:
-    
-#         price=float(price)
-        
-#     except ValueError:
-#         flash('price')
-#         return redirect(url_for('add_service', category_id=category_id))
-    
-#     if price <= 0:
-#         flash('Price cannot be negative')
-#         return redirect(url_for('add_service', category_id=category_id))
-    
-    
-#     service = Service(name=name, price=price, category=category, type=type, description=description, location=location, duration=duration)
-#     db.session.add(service)
-#     db.session.commit()
-#     flash("Service added successfully")
-#     return redirect(url_for('show_category', id=category_id))
-
-
-
-# @app.route('/service/<int:id>/edit')
-# @roles_required('admin')
-# def edit_service(id):
-#     service=Service.query.get(id)
-#     categories=Category.query.all() 
-#     return render_template('service/edit.html', categories=categories,service=service)
-
-# @app.route('/service/<int:id>/edit', methods=['POST'])
-# @roles_required('admin')
-# def edit_service_post(id):
-#     name = request.form.get('name')
-#     category_id = request.form.get('category_id')
-#     type = request.form.get('type')
-#     description = request.form.get('description')
-#     price = request.form.get('price')
-    
-#     category = Category.query.get(category_id)
-#     if not category:
-#         flash('Service_Type does not exist')
-#         return redirect(url_for('admin_db'))
-#     if not name or not price or not type or not description:
-#         flash('Please fill out the fields')
-#         return redirect(url_for('add_service', category_id=category_id))
-    
-#     try:
-#         price=float(price)
-        
-#     except ValueError:
-#         flash('Invalid quantity or price')
-#         return redirect(url_for('add_service', category_id=category_id))
-    
-#     if price <= 0:
-#         flash('Quantity or price cannot be negative')
-#         return redirect(url_for('add_service', category_id=category_id))
-
-#     service=Service.query.get(id)
-#     service.name=name
-#     service.category=category
-#     service.type=type
-#     service.description=description
-#     service.price=price
-    
-    
-#     db.session.commit()
-#     flash("Service edited successfully")
-#     return redirect(url_for('show_category', id=category_id))
-
-# @app.route('/service/<int:id>/delete')
-# @roles_required('admin')
-# def delete_service(id):
-
-#     service = Service.query.get(id)
-#     if not service:
-#         flash('Service does not exist')
-#         return redirect(url_for('admin_db'))
-#     return render_template('service/delete.html', service=service)
-
-# @app.route('/service/<int:id>/delete', methods=['POST'])
-# @login_required
-# def delete_service_post(id):
-#     service = Service.query.get(id)
-#     if not service:
-#         flash('Service does not exist')
-#         return redirect(url_for('admin_db'))
-#     category_id = service.category.id
-#     db.session.delete(service)
-#     db.session.commit()
-#     flash('Service deleted successfully')
-#     return redirect(url_for('show_category', id=category_id))
-
 @app.route('/api/categories/<int:category_id>/services', methods=['POST'])
 @login_required
+@roles_required('Admin')
 def create_service(category_id):
     category = Category.query.get_or_404(category_id)
     data = request.get_json()
@@ -2080,32 +1964,10 @@ def create_service(category_id):
     return jsonify({'message': 'Service created successfully', 'service_id': new_service.id}), 201
 
 
-# @app.route('/api/categories/<int:category_id>/services', methods=['GET'])
-# @login_required
-# def get_services(category_id):
-#     services = Service.query.filter_by(category_id=category_id).all()
-#     print(services)
-#     if not services:
-#         return jsonify({'error': 'No services found'}), 404
-#     services_list = [{
-#         'id': service.id,
-#         'name': service.name,
-#         'type': service.type,
-#         'description': service.description,
-#         'price': service.price,
-#         'location': service.location,
-#         'duration': service.duration
-#     } for service in services]
-#     categories = Category.query.all()
-#     category_list = [{
-#         'id': category.id,
-#         'name': category.name
-#     } for category in categories]
-#     print(services_list)
-
-#     return jsonify(services_list, category_list), 200
-
 @app.route('/api/categories/<int:category_id>/services', methods=['GET'])
+@login_required
+@roles_required('Admin')
+
 def get_services_by_category(category_id):
     category = Category.query.get(category_id)
     if not category:
@@ -2131,6 +1993,7 @@ def get_services_by_category(category_id):
 
 @app.route('/api/categories/<int:category_id>/services/<int:service_id>', methods=['GET'])
 @login_required
+@roles_required('Admin')
 def get_service(category_id, service_id):
     service = Service.query.filter_by(id=service_id, category_id=category_id).first_or_404()
     return jsonify({
@@ -2145,6 +2008,7 @@ def get_service(category_id, service_id):
 
 @app.route('/api/categories/<int:category_id>/services/<int:service_id>', methods=['PUT'])
 @login_required
+@roles_required('Admin')
 def update_service(category_id, service_id):
     service = Service.query.filter_by(id=service_id, category_id=category_id).first_or_404()
     data = request.get_json()
@@ -2159,6 +2023,7 @@ def update_service(category_id, service_id):
 
 @app.route('/api/categories/<int:category_id>/services/<int:service_id>', methods=['DELETE'])
 @login_required
+@roles_required('Admin')
 def delete_service(category_id, service_id):
     service = Service.query.filter_by(id=service_id, category_id=category_id).first_or_404()
     db.session.delete(service)
