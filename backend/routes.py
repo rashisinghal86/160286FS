@@ -1,7 +1,8 @@
 from app import app
 from flask import jsonify, render_template, request, flash, redirect, url_for, session, send_from_directory
 from backend.models import db, User, Role,Admin, Professional, Customer, Category, Service, Schedule, Transaction, Booking
-from flask_security import login_required, roles_required, current_user, login_user, logout_user
+from flask_security import login_required, roles_required, current_user, login_user, logout_user, roles_accepted
+
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
@@ -498,6 +499,7 @@ def test_login():
 
 @app.route('/admin')
 @login_required
+@roles_required('admin')
 def admin_dashboard():
     return "Admin Dashboard"
 from flask_security import current_user
@@ -532,6 +534,7 @@ def debug_roles():
 # 
 @app.route('/home')
 @login_required
+@roles_accepted('Professional', 'Customer')
 def home():
     print(f"Current User: {current_user}")  # Debugging step
     print(f"User Roles: {current_user.roles}")  # Debugging step
@@ -808,6 +811,8 @@ def register_professional():
 
 
 @app.route('/api/upload_professional_file', methods=['POST'])
+@login_required
+@roles_required('Professional')
 def upload_professional_file():
     """API for handling professional document uploads."""
     try:
@@ -846,7 +851,7 @@ def upload_professional_file():
 #     return render_template('professionals.html', professionals=professionals, pname=pname, pservice_type=pservice_type, plocation=plocation)
 
 @app.route('/api/admin/professionals', methods=['GET'])
-# @roles_required('admin')  # If you want to enforce admin role, you can use this
+@roles_required('Admin')  # If you want to enforce admin role, you can use this
 def professionals():
     pname = request.args.get('pname') or ''
     pservice_type = request.args.get('pservice_type') or ''
@@ -870,7 +875,9 @@ def professionals():
         'name': professional.name,
         'service_type': professional.service_type,
         'location': professional.location,
-        'filename': professional.filename  # Include filename for document link
+        'filename': professional.filename,
+         'is_verified': professional.is_verified,
+         'is_flagged': professional.is_flagged # Include filename for document link
     } for professional in professionals]
 
     return jsonify({
@@ -884,6 +891,7 @@ def professionals():
 
 
 @app.route('/api/admin/pending_professionals', methods=['GET'])
+@roles_required('Admin')
 @login_required
 def pending_professionals():
     if current_user.role_id != 1:

@@ -1,22 +1,50 @@
 Skill Ordering App# 160286FS
-async create_csv() {
-            try {
-                const response = await fetch(location.origin+'/create_csv', {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const task_id = (await response.json()).task_id;
-                const interval = setInterval(async () => {
-                    const response = await fetch(location.origin+'/get_csv?task_id=' + task_id);
-    
-                if (response.ok) {
-                    console.log('csv created');
-                    window.open(location.origin+'/get_csv?task_id=' + task_id);
-                    clearInterval(interval)
-                }
-            }
-            , 1000);
-        } catch (error) {
-            console.error('CSV creation failed', error);
+const store = new Vuex.Store({
+    state : {
+        // like data
+        auth_token : null,
+        role : null,
+        loggedIn : false,
+        user_id : null,
+    },
+    mutations : {
+        // functions that change state
+        setUser(state) {
+            try{
+             if (JSON.parse(localStorage.getItem('user'))){
+                const user = JSON.parse(localStorage.getItem('user'));
+                state.auth_token = user.token;
+                state.role = user.role;
+                state.loggedIn = true;
+                state.user_id = user.id;
+             }
+            } catch {
+                console.warn('not logged in')
+        }         
+        },
+        login(state, user) {
+            state.auth_token = user.token;
+            state.role = user.role;
+            state.loggedIn = true;
+            state.user_id = user.id;
+
+            // Save to local storage
+            localStorage.setItem('user', JSON.stringify(user));
+        },
+        logout(state){
+            state.auth_token = null;
+            state.role = null;
+            state.loggedIn = false;
+            state.user_id = null;
+
+            localStorage.removeItem('user')
         }
-              <button class="btn btn-primary" @click="create_csv">get</button>
+    },
+    actions : {
+        // actions commit mutations can be async
+    }
+})
+
+store.commit('setUser')
+
+export default store;

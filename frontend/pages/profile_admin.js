@@ -85,9 +85,11 @@ export default {
                 alert('Failed to update profile');
             }
         },
+        
         async signout() {
             await fetch('/signout', { method: 'POST' });
-            window.location.href = '/login';
+            window.alert('You have been signed out');
+            this.$router.push('/home');
         }
     },
     mounted() {

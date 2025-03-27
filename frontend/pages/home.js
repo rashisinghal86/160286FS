@@ -16,10 +16,10 @@ export default {
     
     <div class="row">
         <div class="col-12">
-            <a href="{{ url_for('index') }}" class="btn btn-info btn-lg btn-block">
-                <i class="fa-solid fa-house fa-3x"></i>
-                Go to Home
-            </a>
+        <button @click="goToHome" class="btn btn-info btn-lg btn-block">
+        <i class="fa-solid fa-house fa-3x"></i>
+        Go to Home
+    </button>
         </div>
     </div>
 </div>
@@ -54,6 +54,9 @@ export default {
         console.log(data);
         window.alert(data.email);
     }
-}
+    },
+    goToHome() {
+        this.$router.push('/homecss');
+    }
  }
 }  

@@ -35,15 +35,15 @@ export default {
                     <a :href="'/static/uploads/' + professional.filename" target="_blank">View Document</a>
                   </td>
                   <td>
-                    <button @click="approveProfessional(professional.id)" class="btn btn-success btn-sm">
+
+                    <button  v-if="!professional.is_verified" @click="approveProfessional(professional.id)" class="btn btn-success btn-sm">
                       <i class="fa-solid fa-thumbs-up"></i> Approve
                     </button>
-                    <button @click="blockProfessional(professional.id)" class="btn btn-danger btn-sm">
-                      <i class="fa-solid fa-circle-xmark"></i> Block
+                    <button v-if="professional.is_verified" @click="blockProfessional(professional.id)" class="btn btn-danger btn-sm">
+                      <i class="fa-solid fa-thumbs-down"></i> Block
                     </button>
-                    <button @click="unblockProfessional(professional.id)" class="btn btn-warning btn-sm">
-                      <i class="fa-solid fa-circle-check"></i> Unblock
-                    </button>
+                    <button v-if="professional.is_flagged" @click="unblockProfessional(professional.id)" class="btn btn-secondary btn-sm">
+                      <i class="fa-solid fa-thumbs-up"></i> Unblock
                   </td>
                 </tr>
               </tbody>
@@ -75,9 +75,17 @@ export default {
         const response = await fetch(`/api/admin/approve_professional/${id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
+          
         });
 
-        if (response.ok) this.fetchProfessionals();
+        if (response.ok){
+          window.alert('Professional approved successfully!');
+          this.fetchProfessionals();
+        } else {
+            const errorData = await response.json();
+            window.alert(`Approval failed: ${errorData.message || 'Unknown error'}`);
+          }
+        
       } catch (error) {
         console.error('Error approving professional:', error);
       }
@@ -89,7 +97,11 @@ export default {
           headers: { 'Content-Type': 'application/json' }
         });
 
-        if (response.ok) this.fetchProfessionals();
+        if (response.ok){
+          window.alert('Professional blocked successfully!');
+         
+          this.fetchProfessionals();
+        }
       } catch (error) {
         console.error('Error blocking professional:', error);
       }
@@ -101,7 +113,10 @@ export default {
           headers: { 'Content-Type': 'application/json' }
         });
 
-        if (response.ok) this.fetchProfessionals();
+        if (response.ok){
+          window.alert('Professional unblocked successfully!');
+          this.fetchProfessionals();
+        } 
       } catch (error) {
         console.error('Error unblocking professional:', error);
       }
