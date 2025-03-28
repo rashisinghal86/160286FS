@@ -5,11 +5,20 @@ export default {
         <h2 class="display-4">Search Professionals</h2>
         <hr>
         
-        <br>
-
+        <form @submit.prevent="search">
+          <div class="input-group mb-3">
+            <input type="text" v-model="pname" class="form-control" placeholder="Name">
+            <input type="text" v-model="plocation" class="form-control" placeholder="Location">
+            <input type="text" v-model="pservice_type" class="form-control" placeholder="Service">
+            <button @click="refreshPage" class="btn btn-outline-success">
+              <i class="fa fa-refresh"></i> Refresh
+            </button>
+            <button class="btn btn-outline-primary" type="submit">
+              <i class="fa fa-search"></i> Search
+            </button>
+          </div>
+        </form>
         
-        <br>
-       
         <hr>
         <h5 class="display-5 text-center mt-5">Search from all Registered Professionals</h5>
 
