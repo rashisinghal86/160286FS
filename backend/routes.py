@@ -1424,23 +1424,6 @@ def delete_user():
             
 
 
-# @app.route('/profile')
-# @login_required
-# def profile():
-#     user = User.query.get(session['user_id'])
-#     role = Role.query.get (user.role_id)
-   
-#     #if user is admin, redirect to profile_admin page
-#     if role.name == 'Admin':
-#         return render_template('profile_admin.html', user=user)
-#     elif role.name == 'Professional':
-#         professional = Professional.query.filter_by(user_id=user.id).first()
-#         return render_template('profile_prof.html', user=user, professional=professional)
-#     elif role.name == 'Customer':
-#         customer = Customer.query.filter_by(user_id=user.id).first()
-#         return render_template('profile_cust.html', user=user, customer=customer)
-#     flash('Unexpected role. Please contact support.')
-#     return redirect(url_for('home')) 
 @app.route('/api/profile', methods=['GET']) #not using this for now
 
 @login_required
@@ -1481,143 +1464,6 @@ def profile():
 
     return jsonify(profile_data), 200
 
-# @app.route('/profile', methods=['POST'])
-# @login_required
-# def profile_post():
-#     # if user is admin, redirect to profile_admin page
-#     user = User.query.get(session['user_id'])
-#     role = Role.query.get(user.role_id)
-    
-#     if role.name == 'Admin':
-        
-#         admin = Admin.query.filter_by(user_id=user.id).first()
-#         username=request.form.get('username')
-#         cpassword=request.form.get('cpassword')
-#         password=request.form.get('password')
-#         admin.name=request.form.get('name')
-
-#         if not username or not cpassword or not password:
-#             flash('Please fill out the fields')
-#             return redirect(url_for('profile'))
-        
-#         #check if current password entered to update is correct
-#         user = User.query.get(session['user_id'])
-#         if not check_password_hash(user.passhash, cpassword):
-#             flash('Incorrect current password')
-#             return redirect(url_for('profile'))
-#         #check if new username id available
-#         if username != user.username:
-#             user = User.query.filter_by(username=username).first()
-#             if user:
-#                 flash('Username already exists')
-#                 return redirect(url_for('profile'))      
-            
-#         new_password_hash = generate_password_hash(password)
-#         user.username = username
-#         user.passhash = new_password_hash
-#         user.name = admin.name
-
-#         db.session.commit()
-#         flash('Profile updated successfully')
-#         return redirect(url_for('home'))
-    
-    
-#     elif role.name == 'Professional':
-        
-#         professional = Professional.query.filter_by(user_id=user.id).first()
-#         if not professional:
-#             flash('Professional profile not found')
-#             return redirect(url_for('profile'))
-
-#         username=request.form.get('username')
-#         cpassword=request.form.get('cpassword')
-#         password=request.form.get('password')
-#         professional.email = request.form.get('email') or professional.email
-#         professional.name = request.form.get('name') or professional.name
-#         professional.contact = request.form.get('contact') or professional.contact
-#         professional.location = request.form.get('location') or professional.location
-#         professional.experience = request.form.get('experience') or professional.experience
-#         professional.service_type = professional.service_type
-
-#         if not username or not cpassword or not password:
-#             flash('Please fill out the fields')
-#             return redirect(url_for('profile'))
-        
-#         #check if current password entered to update is correct
-#         #user = User.query.get(session['user_id'])
-#         if not check_password_hash(user.passhash, cpassword):
-#             flash('Incorrect current password')
-#             return redirect(url_for('profile'))
-#         #check if new username id available
-#         if username != user.username:
-#             existing_user = User.query.filter_by(username=username).first()
-#             if existing_user:
-#                 flash('Username already exists')
-#                 return redirect(url_for('profile'))   
-
-#         new_password_hash = generate_password_hash(password)
-#         user.username = username
-#         user.passhash = new_password_hash
-#         user.name = professional.name
-#         professional.email = professional.email
-#         professional.contact = professional.contact
-#         professional.location = professional.location
-#         professional.service_type = professional.service_type
-#         professional.experience = professional.experience
-
-
-#         db.session.commit()
-#         flash('Profile updated successfully')
-#         return redirect(url_for('home'))
-    
-    
-
-#     elif role.name == 'Customer':
-        
-#         customer = Customer.query.filter_by(user_id=user.id).first()
-#         if not customer:
-#             flash('Customer profile not found')
-#             return redirect(url_for('profile'))
-
-#         username=request.form.get('username')
-#         cpassword=request.form.get('cpassword')
-#         password=request.form.get('password')
-#         customer.email = request.form.get('email') or customer.email
-#         customer.name = request.form.get('name') or customer.name
-#         customer.contact = request.form.get('contact') or customer.contact
-#         customer.location = request.form.get('location') or customer.location
-
-#         if not username or not cpassword or not password:
-#             flash('Please fill out the fields')
-#             return redirect(url_for('profile'))
-        
-#         #check if current password entered to update is correct
-#         #user = User.query.get(session['user_id'])
-#         if not check_password_hash(user.passhash, cpassword):
-#             flash('Incorrect current password')
-#             return redirect(url_for('profile'))
-#         #check if new username id available
-#         if username != user.username:
-#             existing_user = User.query.filter_by(username=username).first()
-#             if existing_user:
-#                 flash('Username already exists')
-#                 return redirect(url_for('profile'))   
-
-#         new_password_hash = generate_password_hash(password)
-#         user.username = username
-#         user.passhash = new_password_hash
-#         user.name = customer.name
-#         customer.email = customer.email
-#         customer.contact = customer.contact
-#         customer.location = customer.location
-    
-
-#         db.session.commit()
-#         flash('Profile updated successfully')
-#         return redirect(url_for('home'))
-    
-#     flash('Unexpected role. Please contact support.')
-#     return redirect(url_for('home'))
 @app.route('/api/profile', methods=['POST'])
 def profile_post():
     """API endpoint to update user profile"""
@@ -1702,39 +1548,17 @@ def profile_post():
 
 
     
-# #-------admin pages-----------------------------------
-# @app.route('/admin_db')
-# @roles_required('admin')
-# def admin_db():
-#     categories=Category.query.all()
-#     category_names = [category.name for category in categories]
-#     category_sizes = [len(category.services) for category in categories]
-#     admin = Admin.query.filter_by(user_id=session['user_id']).first()
-    
-   
-#     pending_professionals = [Professional.query.filter_by(is_verified=False).count()]
-#     blocked_professionals = [Professional.query.filter_by(is_flagged=True).count()]
-#     approved_professionals = [Professional.query.filter_by(is_verified=True).count()]
-
-#     blocked_customers = [Customer.query.filter_by(is_blocked=True).count()]
-#     unblocked_customers = [Customer.query.filter_by(is_blocked=False).count()]
-
-#     return render_template('admin_db.html',categories=categories, category_names=category_names, category_sizes=category_sizes, blocked_professionals=blocked_professionals, pending_professionals=pending_professionals, approved_professionals=approved_professionals, blocked_customers=blocked_customers, unblocked_customers=unblocked_customers, admin=admin)
-
+#-------admin pages-----------------------------------
 @app.route('/api/admin_db', methods=['GET'])
 @login_required
 def admin_db():
-    """Fetch admin dashboard data as JSON"""
-
     # ✅ Check if the logged-in user has the 'admin' role
     # ✅ Check if the logged-in user has role_id 1
     if current_user.role_id != 1:  
         return jsonify({"error": "Forbidden: Admin access required"}), 403
  
 
-    # ✅ Fetch admin details  
     admin = Admin.query.filter_by(user_id=current_user.id).first()
-    
     if not admin:
         return jsonify({"error": "Admin not found"}), 404
 
@@ -1773,86 +1597,8 @@ def admin_db():
     }), 200
 
 # #----------------Add category pages-----------------------------------
-# @app.route('/category/add',methods=['POST'])
-# @roles_required('admin')
-# def add_category_post():
-#     name = request.form.get('name')
-#     if not name:
-#         flash('Please fill out the fields')
-#         return redirect(url_for('add_category'))
-#     category = Category(name=name)
-#     db.session.add(category)
-#     db.session.commit()
-#     flash("Service_Type added successfully")
-#     return redirect(url_for('add_service', category_id=category.id))
 
-
-# @app.route('/category/<int:id>/')
-# @roles_required('admin')
-# def show_category(id):
-#     category=Category.query.get(id)
-#     if not category:
-#         flash('Service_Type does not exist')
-#         return redirect(url_for('admin_db'))
-#     return render_template('category/show.html', category=category)
-#     #return("show category")
-
-
-# @app.route('/category/<int:id>/edit')
-# @roles_required('admin')
-# def edit_category(id):
-#     category=Category.query.get(id)
-    
-#     if not category:
-#         flash('Service_Type does not exist')
-#         return redirect(url_for('admin_db'))
-#     return render_template("category/edit.html", category=category)
-
-
-# @app.route('/category/<int:id>/edit', methods=['POST'])
-# @roles_required('admin')
-# def edit_category_post(id):
-#     category=Category.query.get(id)    
-#     if not category:
-#         flash('Service_Type does not exist')
-#         return redirect(url_for('admin'))
-#     name=request.form.get('name')
-#     if not name:
-#         flash('Please fill out the fields')
-#         return redirect(url_for('edit_category',id=id))
-#     category.name=name
-#     db.session.commit()
-#     flash('Service_Type updated successfully')  
-#     return redirect(url_for('add_category'))
-
-
-    
-
-# @app.route('/category/<int:id>/delete')
-# @login_required
-# def delete_category(id):
-#     category = Category.query.get(id)
-#     if not category:
-#         flash('Service_Type does not exist')
-#         return redirect(url_for('admin_db'))
-#     return render_template('category/delete.html', category=category)
-
-# @app.route('/category/<int:id>/delete', methods=['POST'])
-# @login_required
-# def delete_category_post(id):
-#     category = Category.query.get(id)
-#     if not category:
-#         flash('Service_Type does not exist')
-#         return redirect(url_for('admin_db'))
-#     db.session.delete(category)
-#     db.session.commit()
-#     flash('Service_Type deleted successfully')
-#     return redirect(url_for('add_category'))
-
-
-# CRUD for category
-
-# Create a New Category (POST)check1:
+# Create a New Category 
 @app.route('/api/category', methods=['POST'])
 @login_required
 @roles_required('Admin')
@@ -1871,7 +1617,8 @@ def add_category():
         'message': 'Service_Type added successfully',
         'category_id': category.id
     }), 201
-# 2. Retrieve a Category by ID (GET):
+
+# get  Category by ID
 
 @app.route('/api/category/<int:id>', methods=['GET'])
 @login_required
@@ -1900,14 +1647,11 @@ def get_categories():
         categories_list.append({
             'id': category.id,
             'name': category.name,
-            # Include other fields as necessary
-            # 'services': [{'id': service.id, 'name': service.name} for service in category.services]  # Example of related services
         })
     
     return jsonify(categories_list), 200
 
 
-#  update a category(PUT)
 @app.route('/api/category/<int:id>', methods=['PUT'])
 @login_required
 @roles_required('Admin')
@@ -1927,7 +1671,6 @@ def update_category(id):
     return jsonify({'message': 'Service_Type updated successfully'}), 200
 
 
-# delete a category (DELETE)
 @app.route('/api/category/<int:id>', methods=['DELETE'])
 @login_required
 @roles_required('Admin')
@@ -1943,7 +1686,7 @@ def delete_category(id):
 
 
 
-# #----------- Add services packages in a category-----------------------------------
+# #----------- Add services in a category-----------------------------------
 @app.route('/api/categories/<int:category_id>/services', methods=['POST'])
 @login_required
 @roles_required('Admin')
