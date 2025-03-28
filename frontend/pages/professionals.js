@@ -36,7 +36,7 @@ export default {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="professional in professionals" :key="professional.id">
+                <tr v-for="professional in filteredProfessionals" :key="professional.id">
                   <td>{{ professional.name }}</td>
                   <td>{{ professional.location }}</td>
                   <td>{{ professional.service_type }}</td>
@@ -44,22 +44,20 @@ export default {
                     <a :href="'/static/uploads/' + professional.filename" target="_blank">View Document</a>
                   </td>
                   <td>
-
-                    <button  v-if="!professional.is_verified" @click="approveProfessional(professional.id)" class="btn btn-success rounded-pill btn-sm">
+                    <button v-if="!professional.is_verified" @click="approveProfessional(professional.id)" class="btn btn-success rounded-pill btn-sm">
                       <i class="fa-solid fa-thumbs-up"></i> Approve
                     </button>
-                    <button v-if="professional.is_verified && !professional.is_flagged " @click="blockProfessional(professional.id)" class="btn btn-danger rounded-pill btn-sm">
+                    <button v-if="professional.is_verified && !professional.is_flagged" @click="blockProfessional(professional.id)" class="btn btn-danger rounded-pill btn-sm">
                       <i class="fa-solid fa-thumbs-down"></i> Block
                     </button>
                     <button v-if="professional.is_flagged" @click="unblockProfessional(professional.id)" class="btn btn-secondary rounded-pill btn-sm">
                       <i class="fa-solid fa-thumbs-up"></i> Unblock
                     </button>
                   </td>
-                   <td>
+                  <td>
                     <button @click="delete_user(professional.id)" class="btn btn-primary rounded-pill btn-sm">
-  <i class="fa-solid fa-user-slash"></i> Delete
-</button>
-
+                      <i class="fa-solid fa-user-slash"></i> Delete
+                    </button>
                   </td> 
                 </tr>
               </tbody>
@@ -71,8 +69,21 @@ export default {
   `,
   data() {
     return {
-      professionals: []
+      professionals: [],
+      pname: '',
+      plocation: '',
+      pservice_type: '',
+      refreshUrl: '/professionals'
     };
+  },
+  computed: {
+    filteredProfessionals() {
+      return this.professionals.filter(professional =>
+        (!this.pname || professional.name.toLowerCase().includes(this.pname.toLowerCase())) &&
+        (!this.plocation || professional.location.toLowerCase().includes(this.plocation.toLowerCase())) &&
+        (!this.pservice_type || professional.service_type.toLowerCase().includes(this.pservice_type.toLowerCase()))
+      );
+    }
   },
   methods: {
     async fetchProfessionals() {
@@ -86,22 +97,26 @@ export default {
         console.error('Error fetching professionals:', error);
       }
     },
+    search() {
+      console.log("Searching with:", this.pname, this.plocation, this.pservice_type);
+    },
+    refreshPage() {
+      // Reload the page or reset the form
+      this.pname = '';
+      this.plocation = '';
+      this.pservice_type = '';
+      this.fetchProfessionals();
+    },
     async approveProfessional(id) {
       try {
         const response = await fetch(`/api/admin/approve_professional/${id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
-          
         });
-
-        if (response.ok){
+        if (response.ok) {
           window.alert('Professional approved successfully!');
           this.fetchProfessionals();
-        } else {
-            const errorData = await response.json();
-            window.alert(`Approval failed: ${errorData.message || 'Unknown error'}`);
-          }
-        
+        }
       } catch (error) {
         console.error('Error approving professional:', error);
       }
@@ -112,10 +127,8 @@ export default {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
-
-        if (response.ok){
+        if (response.ok) {
           window.alert('Professional blocked successfully!');
-         
           this.fetchProfessionals();
         }
       } catch (error) {
@@ -128,11 +141,10 @@ export default {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
-
-        if (response.ok){
+        if (response.ok) {
           window.alert('Professional unblocked successfully!');
           this.fetchProfessionals();
-        } 
+        }
       } catch (error) {
         console.error('Error unblocking professional:', error);
       }
@@ -143,22 +155,16 @@ export default {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' }
         });
-    
         if (response.ok) {
           window.alert('Professional deleted successfully!');
-          this.fetchProfessionals(); // Refresh the list after deletion
-        } else {
-          const errorData = await response.json();
-          window.alert(`Deletion failed: ${errorData.error || 'Unknown error'}`);
+          this.fetchProfessionals();
         }
       } catch (error) {
         console.error('Error deleting professional:', error);
-        window.alert('An error occurred while deleting the professional.');
       }
     }
-      },
+  },
   mounted() {
     this.fetchProfessionals();
   }
-
 };
