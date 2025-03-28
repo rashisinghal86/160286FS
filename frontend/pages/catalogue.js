@@ -11,9 +11,7 @@ export default {
           <div class="form-group mx-sm-3 mb-2">
             <input v-model="filters.sname" type="text" placeholder="Service Name" class="form-control">
           </div>
-          <div class="form-group mx-sm-3 mb-2">
-            <input v-model="filters.price" type="number" placeholder="Max Price" class="form-control">
-          </div>
+        
           <div class="form-group mx-sm-3 mb-2">
             <input v-model="filters.location" type="text" placeholder="Location" class="form-control">
           </div>
@@ -61,7 +59,6 @@ export default {
       filters: {
         cname: '',
         sname: '',
-        price: '',
         location: ''
       },
       bookingDateTime: {}

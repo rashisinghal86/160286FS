@@ -1862,14 +1862,7 @@ def get_catalogue():
     if cname:
         query = query.filter(Category.name.ilike(f'%{cname}%'))
     
-    try:
-        if price:
-            price = float(price)
-            if price <= 0:
-                return jsonify({"error": "Price cannot be negative"}), 400
-    except ValueError:
-        return jsonify({"error": "Invalid price"}), 400
-
+   
     categories = query.all()
     
     # Convert to JSON response
@@ -1883,6 +1876,7 @@ def get_catalogue():
                     "name": service.name,
                     "price": service.price,
                     "description": service.description
+                    "location": service.location,
                 }
                 for service in cat.services
             ]
