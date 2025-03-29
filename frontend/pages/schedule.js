@@ -4,7 +4,6 @@ export default {
       <h4 class="display-3">  
         <a href="/catalogue" class="btn btn-success">
           <i class="fa-solid fa-book-open"></i>
-          <p class="card-text">View Catalogue</p>
         </a>
         Requested Schedule Details
       </h4>
@@ -43,8 +42,10 @@ export default {
       <div v-if="schedules.length === 0" class="alert alert-warning">
         <h4 class="alert-heading">No schedule found</h4>
         <p>There is no schedule found in the database. Please add a schedule to proceed.</p>
-        <a href="/catalogue" class="btn btn-outline-primary">Check Catalogue to Schedule Services</a>
-      </div>
+        <router-link to="/catalogue" class="btn btn-outline-primary">
+        Check Catalogue to Schedule Services
+    </router-link>
+          </div>
 
       <!-- Edit Schedule Modal -->
       <div v-if="showEditModal" class="modal" tabindex="-1" role="dialog" style="display: block;">

@@ -1811,80 +1811,60 @@ def api_cust_db(user_id):
     return jsonify({'customer': customer_data}), 200
 
 
-# @app.route('/catalogue')
-# @login_required
-# def catalogue():
-#     #user_id in session/ if user id exists in session we will allow them to see catalogue.html
-#     #if user is an admin he goes to admin page else user page>> get user
-#     # user=User.query.get(session['user_id'])
-#     # if user.is_admin:
-#     #     return redirect(url_for('admin'))
-    
-#     categories=Category.query.all()
-
-#     cname = request.args.get('cname') or ''
-#     sname = request.args.get('sname') or ''
-#     price = request.args.get('price')
-#     location = request.args.get('location') or ''
-#     datetime = request.args.get('datetime') or ''
-#     description = request.args.get('description') or ''
-
-#     if price:
-#         try:
-#             price = float(price)
-#         except ValueError:
-#             flash('Invalid price')
-#             return redirect(url_for('catalogue'))
-#         if price <= 0:
-#             flash('Price cannot be negative')
-#             return redirect(url_for('catalogue'))
-
-#     if cname:
-#         categories = Category.query.filter(Category.name.ilike(f'%{cname}%')).all()
-#     return render_template('catalogue.html', categories=categories, cname=cname, sname=sname, price=price, location=location, datetime=datetime, description=description)
 @app.route('/api/catalogue', methods=['GET'])
-@login_required  # Uncomment if authentication is needed
+@login_required
+@roles_required('Customer')
 def get_catalogue():
-    """Fetch categories and services based on filters for the catalogue page."""
-    # Get query parameters
+    """Fetch categories and services based on filters."""
+
     if 'user_id' not in session:
         return jsonify({"error": "Unauthorized access"}), 401
 
-    cname = request.args.get('cname', '')
-    sname = request.args.get('sname', '')
-    price = request.args.get('price')
-    location = request.args.get('location', '')
-    datetime = request.args.get('datetime', '')
-    description = request.args.get('description', '')
+    # Get query parameters
+    cname = request.args.get('cname', '').strip()
+    sname = request.args.get('sname', '').strip()
+    location = request.args.get('location', '').strip()
 
-    query = Category.query
+    # Start with Category query (ensures categories without services are included)
+    query = db.session.query(Category).outerjoin(Service).distinct()
 
     if cname:
         query = query.filter(Category.name.ilike(f'%{cname}%'))
     
-   
-    categories = query.all()
+    if sname:
+        query = query.filter(Service.name.ilike(f'%{sname}%'))
     
-    # Convert to JSON response
-    categories_data = [
-        {
+    if location:
+        query = query.filter(Service.location.ilike(f'%{location}%'))
+
+    categories = query.all()
+
+    #  categories appear even if no services match
+
+    categories_data = []
+    for cat in categories:
+        services = [
+            {
+                "id": service.id,
+                "name": service.name,
+                "price": service.price,
+                "description": service.description,
+                "location": service.location,
+            }
+            for service in cat.services
+            if (not sname or sname.lower() in service.name.lower()) and
+               (not location or location.lower() in service.location.lower())
+        ]
+
+        # Include category even if no services match
+        categories_data.append({
             "id": cat.id,
             "name": cat.name,
-            "services": [
-                {
-                    "id": service.id,
-                    "name": service.name,
-                    "price": service.price,
-                    "description": service.description
-                    "location": service.location,
-                }
-                for service in cat.services
-            ]
-        }
-        for cat in categories
-    ]
+            "services": services
+        })
 
-    return jsonify({"categories": categories_data})
+    return jsonify({"categories": categories_data}), 200
+
 
 # @app.route('/add_to_schedule/<int:service_id>', methods=['POST'])
 # @login_required

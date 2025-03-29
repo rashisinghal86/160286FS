@@ -3,25 +3,36 @@ export default {
     <div class="container mt-4">
       <h1 class="display-4 text-center">Catalogue of Services</h1>
       <br>
-      <div class="container mt-1">
-        <form @submit.prevent="fetchCatalogue" class="form-inline">
-          <div class="form-group mb-2">
-            <input v-model="filters.cname" type="text" placeholder="Category Name" class="form-control">
-          </div>
-          <div class="form-group mx-sm-3 mb-2">
-            <input v-model="filters.sname" type="text" placeholder="Service Name" class="form-control">
-          </div>
-        
-          <div class="form-group mx-sm-3 mb-2">
-            <input v-model="filters.location" type="text" placeholder="Location" class="form-control">
-          </div>
+      <div class="container mt-2">
+      <form @submit.prevent="fetchCatalogue" class="form-inline">
+      <div class="form-group mb-2">
+          <input v-model="filters.cname" type="text" placeholder="Category Name" class="form-control">
+      </div>
+      
+      <div class="form-group mx-sm-3 mb-2">
+          <input v-model="filters.sname" type="text" placeholder="Service Name" class="form-control">
+      </div>
+  
+      <div class="form-group mx-sm-3 mb-2">
+          <input v-model="filters.location" type="text" placeholder="Location" class="form-control">
+      </div>
+  
+      <div class="form-group mx-sm-3 mb-2">
           <button type="submit" class="btn btn-primary mb-2">Filter</button>
-        </form>
+      </div>
+  
+      <div class="form-group mx-sm-3 mb-2">
+          <button @click="refreshPage" class="btn btn-outline-success">
+              <i class="fa fa-refresh"></i> Refresh
+          </button>
+      </div>
+  </form>
+  
       </div>
       <hr>
       <div class="container mt-4">
         <div style="text-align: right;">
-          <router-link to="#" class="btn btn-secondary"> <i class="fa-solid fa-user-tie"></i> View Registered Professionals</router-link>
+          <router-link to="/prof_byrating" class="btn btn-secondary"> <i class="fa-solid fa-user-tie"></i> View Registered Professionals</router-link>
         </div>
         <br>
         <div class="categories-list">
@@ -102,6 +113,12 @@ export default {
       } catch (error) {
         console.error('Error:', error);
       }
+    },
+    refreshPage() {
+      this.filters.cname = '';
+      this.filters.sname = '';
+      this.filters.location = '';
+      this.fetchCatalogue();
     }
   },
   
