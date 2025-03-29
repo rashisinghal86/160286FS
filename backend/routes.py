@@ -1236,12 +1236,8 @@ def accept_booking(id):
     return jsonify({"message": "Booking accepted successfully", "booking_id": booking.id}), 200
 
 # #-----3. signout-------------------------
-# @app.route('/signout')
-# @login_required
-# def signout():
-#     session.pop('user_id')
-#     return render_template('home.html')
 @app.route('/api/signout', methods=['POST'])
+@login_required
 def signout():
     if not current_user.is_authenticated:
         return jsonify({'error': 'User not logged in'}), 401
@@ -1249,23 +1245,9 @@ def signout():
     logout_user()
     return jsonify({'message': 'Successfully signed out'}), 200
 
-# @app.route('/delete/prof')
-# @login_required
-# def delete_prof():
-#     user = User.query.get(session['user_id'])
-
-#     if user:
-#         professional = Professional.query.filter_by(user_id=user.id).first()
-#         if professional:
-#             db.session.delete(professional)
-        
-#         db.session.delete(user)
-#         db.session.commit()
-#     else:
-#         print("User not found.")
-
-#     return render_template('homecss.html')
 @app.route('/api/admin/delete_professional/<int:id>', methods=['DELETE'])
+@login_required
+@roles_required('Admin')
 def delete_professional(id):
     professional = Professional.query.get(id)
     if not professional:

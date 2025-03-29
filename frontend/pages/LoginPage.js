@@ -83,21 +83,22 @@ export default {
                 }
                 
                 const data = await response.json();
+                localStorage.setItem('user', JSON.stringify(data));
                 localStorage.setItem('token', data.authentication_token);
                 this.output = data;
                 console.log("Login Successful:", data);
-                window.alert(`Login Success: ${data.email}`);
+                window.alert(`Login Success`);
                 this.$store.commit('setUser');
   
                 if (data.admin?.role === 'Admin') {
                     this.$router.push('/api/admin_db');
-                    window.alert("Login Success", data.admin.role);
+                    window.alert("Access Authorized to Admin Dashboard");
                 } else if (data.customer?.role === 'Customer') {
                     if (data.customer.is_blocked === true) {
                         window.alert("Your account has been blocked. Please wait for further instructions.");
                     } else {
                     this.$router.push('/cust_db');
-                    window.alert("Login Success", data.customer.role);
+                    window.alert("Access Authorized to Customer Dashboard");
                     }
                 } else if (data.professional?.role === 'Professional') {
                     if (data.professional.is_flagged === true) {
@@ -106,8 +107,9 @@ export default {
                         window.alert("Your account is under verification. Please wait for further instructions.");
                       } else {
                         this.$router.push('/prof_db');
-                        window.alert("Login Success", data.professional.role);
-                      }                } else {
+                        window.alert("Access Authorized to Professional Dashboard");
+                      }                
+                    } else {
                     window.alert("Invalid email or password. Please try again.");
                 }
             } catch (error) {

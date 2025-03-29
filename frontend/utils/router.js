@@ -136,7 +136,7 @@ router.beforeEach((to, from, next) => {
             next({path : '/login'})
         } else if (to.meta.role && to.meta.role != store.state.role){
             alert('role not authorized')
-             next({path : '/'})
+             next({path : '/home'})
         } else {
             next();
         }
