@@ -64,7 +64,7 @@ def protected():
 
 import logging
 
-
+#-----------------------------login------------------
 @app.route('/api/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
@@ -158,7 +158,7 @@ def login():
             return jsonify({"error": "Invalid email or password"}), 401           
 
         
-
+#=================================================================================
 
 
 
@@ -243,6 +243,7 @@ def register():
 
     return jsonify({"message": "Registration successful! Please log in."}), 201
 
+#=======================================================================
 @app.route('/debug_admin', methods=['GET'])
 def debug_admin():
     admin_user = User.query.filter_by(email='admin@example.com').first()
@@ -326,12 +327,11 @@ def home():
 @app.route('/api/register_professional', methods=['POST'])
 def register_professional():
     if 'user_id' not in session:
-        return jsonify({'error': 'User not logged in'}), 401  # Unauthorized
+        return jsonify({'error': 'User not logged in'}), 401  
 
-    user = User.query.get(session['user_id'])  # Get logged-in user
-    # Continue with registration logic...
+    user = User.query.get(session['user_id'])  
     """API to register a professional."""
-    data = request.get_json()  # Get JSON data from request body
+    data = request.get_json()  
     
     if not data:
         return jsonify({"error": "Invalid request, JSON data required"}), 400
@@ -346,9 +346,8 @@ def register_professional():
     if not email or not name or not contact or not service_type or not experience:
         return jsonify({"error": "Please enter all required fields"}), 400
 
-    user = User.query.get(session['user_id'])  # Get logged-in user
+    user = User.query.get(session['user_id'])  
 
-    # Check if the professional is already registered
     existing_professional = Professional.query.filter_by(user_id=user.id).first()
     if existing_professional:
         return jsonify({"message": "Already registered", "redirect": "/api/professional_dashboard"}), 200
@@ -393,7 +392,7 @@ def upload_professional_file():
         return jsonify({'message': 'File uploaded successfully'}), 200
 
     except Exception as e:
-        print("Error:", str(e))  # Log error to console
+        print("Error:", str(e))  
         return jsonify({'error': 'Internal Server Error', 'details': str(e)}), 500
 
 
@@ -847,7 +846,35 @@ def delete_professional(id):
 #         print("User not found.")
 
 #     return render_template('homecss.html')
+@app.route('/api/delete/prof', methods=['DELETE'])
+@login_required
+def delete_prof():
+    """Delete the currently authenticated professional account."""
+    # Fetch the user from the session
+    user = User.query.get(session.get('user_id'))
 
+    if not user:
+        return jsonify({'message': 'User not found', 'status': 'error'}), 404
+
+    # Fetch the professional associated with the user
+    professional = Professional.query.filter_by(user_id=user.id).first()
+
+    try:
+        # Delete the professional record if it exists
+        if professional:
+            db.session.delete(professional)
+
+        # Delete the user record
+        db.session.delete(user)
+        db.session.commit()
+
+        return jsonify({'message': 'Professional account deleted successfully', 'status': 'success'}), 200
+
+    except Exception as e:
+        # Rollback in case of an error
+        db.session.rollback()
+        return jsonify({'message': 'Failed to delete account', 'error': str(e)}), 500
+    
 @app.route('/api/delete/cust', methods=['DELETE'])
 @login_required
 def delete_cust():

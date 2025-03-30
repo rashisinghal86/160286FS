@@ -6,11 +6,11 @@ export default {
           <div class="col-md-6">
             <h1 class="display-4">
               Hello
-              <span class="text-muted">@{{ user.username }}</span>
+              <span class="text-muted">@{{ professional.name }}</span>
             </h1>
   
             <div class="profile-pic">
-              <img :src="'https://api.dicebear.com/9.x/bottts/svg?seed=' + prof_name" width="100" alt="avatar">
+              <img :src="'https://api.dicebear.com/9.x/bottts/svg?seed=' + professional.username" width="100" alt="avatar">
             </div>
             <div class="container mt-4">
               <p>Do you really want to delete your account?</p>
@@ -35,7 +35,7 @@ export default {
               </div>
               <div class="form-group">
                 <label for="username" class="form-label">Username<span class="text-danger">**</span></label>
-                <input type="text" v-model="user.username" id="username" class="form-control" required>
+                <input type="text" v-model="professional.username" id="username" class="form-control" required>
               </div>
               <div class="form-group">
                 <label for="cpassword" class="form-label">Current Password<span class="text-danger">**</span></label>
@@ -72,40 +72,64 @@ export default {
     `,
     data() {
       return {
-        user: { username: "" },
-        professional: { email: "", name: "", contact: "", experience: "", location: "", service_type: "" },
+        professional: { email: "", name: "", username: "", contact: "", experience: "", location: "", service_type: "" },
         cpassword: "",
         password: ""
       };
     },
     methods: {
       async fetchUserData() {
-        const response = await fetch('/api/users');
-        if (response.ok) {
-          this.user = await response.json();
+        try {
+          const response = await fetch('/api/profile', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data.role === 'Professional') {
+              this.professional.email = data.email;
+              this.professional.name = data.name;
+              this.professional.username = data.username;
+              this.professional.contact = data.contact || "";
+              this.professional.experience = data.experience || "";
+              this.professional.location = data.location || "";
+              this.professional.service_type = data.service_type || "";
+            } else {
+              alert("You are not authorized to access this page.");
+              this.$router.push('/home');
+            }
+          } else {
+            console.error("Failed to fetch professional data");
+          }
+        } catch (error) {
+          console.error("Error fetching professional data:", error);
         }
       },
       async updateProfile() {
-        const response = await fetch('/api/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user: this.user,
-            name: this.user.name,
-            username: this.user.username,
-            cpassword: this.cpassword,
-            password: this.password,
-            email: this.professional.email,
-            contact: this.professional.contact,
-            location: this.professional.location,
-            experience: this.professional.experience,
-            service_type: this.professional.service_type
-          })
-        });
-        if (response.ok) {
-          alert('Profile updated successfully');
-        } else {
-          alert('Failed to update profile');
+        try {
+          const response = await fetch('/api/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: this.professional.email,
+              name: this.professional.name,
+              username: this.professional.username,
+              cpassword: this.cpassword,
+              password: this.password,
+              contact: this.professional.contact,
+              experience: this.professional.experience,
+              location: this.professional.location,
+              service_type: this.professional.service_type
+            })
+          });
+          if (response.ok) {
+            alert('Profile updated successfully!');
+          } else {
+            alert('Failed to update profile');
+          }
+        } catch (error) {
+          console.error("Error updating profile:", error);
+          alert("Something went wrong. Please try again.");
         }
       },
       async deleteAccount() {
@@ -117,7 +141,7 @@ export default {
           const response = await fetch('/api/delete/prof', { method: 'DELETE' });
           if (response.ok) {
             alert("Your account has been deleted.");
-            window.location.href = '/home'; // Redirect to login page
+            this.$router.push('/home'); // Redirect to home page
           } else {
             alert("Failed to delete account. Please try again.");
           }

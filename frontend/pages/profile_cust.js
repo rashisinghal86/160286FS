@@ -4,7 +4,7 @@ export default {
           <div class="row">
               <div class="col-md-6">
                   <h1 class="display-4">
-                      Hello <span class="text-muted">@user.username</span>
+                      Hello <span class="text-muted">{{ user.name }}</span>
                   </h1>
                   <div class="profile-pic">
                       <img :src="'https://api.dicebear.com/9.x/bottts/svg?seed=' + user.username" width="100" alt="">
@@ -59,7 +59,7 @@ export default {
     `,
     data() {
       return {
-        user: { username: "" },
+        user: { username: "", name: "" },
         customer: { email: "", name: "", contact: "", location: "" },
         cpassword: "",
         password: ""
@@ -67,32 +67,51 @@ export default {
     },
     methods: {
         async fetchUserData() {
-            const response = await fetch('/api/users');
-            if (response.ok) {
-                this.user = await response.json();
+            try {
+                const response = await fetch('/api/profile', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    this.user.username = data.username;
+                    this.user.name = data.name;
+                    this.customer.email = data.email;
+                    this.customer.name = data.name;
+                    this.customer.contact = data.contact || "";
+                    this.customer.location = data.location || "";
+                } else {
+                    console.error("Failed to fetch user data");
+                }
+            } catch (error) {
+                console.error("Error fetching user data:", error);
             }
         },
-      async updateProfile() {
-        const response = await fetch('/api/profile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: this.user.username,
-                name: this.user.name,
-                cpassword: this.cpassword,
-                password: this.password,
-                
-                email: this.customer.email,
-                contact: this.customer.contact,
-                location: this.customer.location
-            })
-        });
-        if (response.ok) {
-            alert('Profile updated successfully!');
-        } else {
-            alert('Failed to update profile');
-        }
-    },
+        async updateProfile() {
+            try {
+                const response = await fetch('/api/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: this.user.username,
+                        name: this.customer.name,
+                        cpassword: this.cpassword,
+                        password: this.password,
+                        email: this.customer.email,
+                        contact: this.customer.contact,
+                        location: this.customer.location
+                    })
+                });
+                if (response.ok) {
+                    alert('Profile updated successfully!');
+                } else {
+                    alert('Failed to update profile');
+                }
+            } catch (error) {
+                console.error("Error updating profile:", error);
+                alert("Something went wrong. Please try again.");
+            }
+        },
         async deleteAccount() {
             if (!confirm("Are you sure you want to delete your account? This action is irreversible!")) {
                 return; // Stop if the user cancels
@@ -102,9 +121,8 @@ export default {
                 const response = await fetch('/api/delete/cust', { method: 'DELETE' });
                 if (response.ok) {
                     alert("Your account has been deleted.");
-                    window.location.href = '/home'; // Redirect to login page
-                }
-                else {
+                    window.location.href = '/home'; // Redirect to home page
+                } else {
                     alert("Failed to delete account. Please try again.");
                 }
             } catch (error) {
@@ -112,10 +130,10 @@ export default {
                 alert("Something went wrong. Please try again.");
             }
         }
-        },
-        mounted() {
-            this.fetchUserData();
-        }
-    };
+    },
+    mounted() {
+        this.fetchUserData();
+    }
+};
 
 
