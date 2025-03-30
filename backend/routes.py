@@ -22,7 +22,10 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-    
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 #----------------------celery tasks---------------------
 @app.route('/api/export') #manuallytriggers
 def export_csv():
@@ -210,6 +213,8 @@ def register():
     db.session.add(user)
     db.session.commit()
 
+
+
     # If the user is assigned the 'Customer' role, create a corresponding entry in the Customer table
     if role_name == 'Customer':
         # You can add logic to get contact information from the request
@@ -369,29 +374,36 @@ def register_professional():
     return jsonify({"message": "Professional registered successfully", "redirect": "/api/professional_dashboard"}), 201
 
 
+
 @app.route('/api/upload_professional_file', methods=['POST'])
 def upload_professional_file():
     """API for handling professional document uploads."""
-    try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file part'}), 400
 
-        file = request.files['file']
+    email = request.form.get("email")  # Fetch email from form data
 
-        if file.filename == '':
-            return jsonify({'error': 'No selected file'}), 400
+    professional = Professional.query.filter_by(email=email).first()
+    if not professional:
+        return jsonify({'error': 'Professional profile not found'}), 404
 
-        if not allowed_file(file.filename):
-            return jsonify({'error': 'Invalid file type'}), 400
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
 
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
 
-        return jsonify({'message': 'File uploaded successfully'}), 200
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'Invalid file type'}), 400
 
-    except Exception as e:
-        print("Error:", str(e))  
-        return jsonify({'error': 'Internal Server Error', 'details': str(e)}), 500
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+
+    # ✅ Store filename in Professional model
+    professional.filename = filename
+    db.session.commit()
+
+    return jsonify({'message': 'File uploaded successfully', 'filename': filename}), 200
 
 
 #---------admin prof management routes-------------------
@@ -995,7 +1007,6 @@ def delete_user():
 
 
 @app.route('/api/profile', methods=['GET']) #not using this for now
-
 @login_required
 def profile():
     user = User.query.get(session.get('user_id'))
