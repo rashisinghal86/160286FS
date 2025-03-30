@@ -370,8 +370,6 @@ def register_professional():
 
 
 @app.route('/api/upload_professional_file', methods=['POST'])
-@login_required
-@roles_required('Professional')
 def upload_professional_file():
     """API for handling professional document uploads."""
     try:
@@ -795,8 +793,9 @@ def accept_booking(id):
     return jsonify({"message": "Booking accepted successfully", "booking_id": booking.id}), 200
 
 # #-----3. signout-------------------------
+
 @app.route('/api/signout', methods=['POST'])
-@login_required
+
 def signout():
     if not current_user.is_authenticated:
         return jsonify({'error': 'User not logged in'}), 401
@@ -891,7 +890,8 @@ def delete_cust():
         if customer:
             db.session.delete(customer)  # Delete customer record
         
-        db.session.delete(user)  # Delete user record
+        db.session.delete(user)
+         # Delete user record
         db.session.commit()
         
         return jsonify({'message': 'Account deleted successfully', 'status': 'success'}), 200
