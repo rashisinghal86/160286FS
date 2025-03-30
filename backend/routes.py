@@ -52,9 +52,6 @@ def get_users():
 def index(): 
     return render_template('index.html')
 
-# @app.route('/home')
-# def home():
-#    return render_template('custom_login.html')
 @app.route('/cache')
 @cache.cached(timeout=5)
 
@@ -68,162 +65,6 @@ def protected():
 import logging
 
 
-
-
-
-# @app.route('/login', methods=['GET', 'POST'])
-# def custom_login():
-#     return "Login Page"  # Temporary response working 21/01/25
-
-# @app.route('/login', methods=['GET'])
-# def login_form():
-#     return render_template('login.html')  # Create a login.html in your templates folder
-# @app.route('/api/login', methods=['GET'])
-# def login_form():
-#     """API endpoint to provide context or status for login."""
-#     return jsonify({
-#         "message": "Login endpoint is available. Submit credentials via POST request.",
-#         "status": "ready"
-#     }), 200
-
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     if request.method == 'GET':
-#         # Render the login page
-#         if current_user.is_authenticated:
-#             flash("You are already logged in.", "info")
-#             return redirect(url_for('home.html'))  # Replace 'home' with your default logged-in route
-#         return render_template('login.html')  # Replace 'login.html' with your template
-
-#     elif request.method == 'POST':
-#         # Handle login form submission
-#         email = request.form.get('email')
-#         password = request.form.get('password')
-
-#         # Validate the form data
-#         if not email or not password:
-#             flash("Please provide both email and password.", "danger")
-#             return redirect(url_for('login'))
-
-#         # Fetch the user from the database
-#         user = User.query.filter_by(email=email).first()
-#         if user and check_password_hash(user.password, password):
-#             # Log the user in
-#             login_user(user)
-#             flash("Login successful!", "success")
-#             return '  # Replace dashboard with your destination route'
-#         else:
-#             flash("Invalid email or password.", "danger")
-#             return redirect(url_for('login'))
- 
-# @app.route('/api/login', methods=['GET', 'POST'])
-# def login():
-#     if request.method == 'GET':
-#         # Respond with JSON if already authenticated
-#         if current_user.is_authenticated:
-#             return jsonify({"message": "You are already logged in.",
-#                     "user": {
-#                     "id": current_user.id,
-#                     "username": current_user.username,
-#                     "email": current_user.email,
-#                     "role": current_user.role.name  # Fetch dynamic role
-#                 }
-#             }), 200
-#         return jsonify({"message": "Please log in to continue."}), 200
-
-#     elif request.method == 'POST':
-
-#         data = request.get_json()
-#         email = data.get('email')
-#         password = data.get('password')
-
-#         if not email or not password:
-#             return jsonify({"error": "Email and password are required."}), 400
-
-#         user = User.query.filter_by(email=email).first()
-#         if user and check_password_hash(user.password, password):
-#             login_user(user)
-
-#             # Store user ID in session
-#             session['user_id'] = user.id
-#             session.permanent = True  # Optional: Keeps the session active
-#             role = Role.query.get(user.role_id)
-#             print(role)
-#             print(role.name)
-            
-#             # Ensure user has a role and return it in response
-#             if not user.roles or len(user.roles) == 0:
-#                 return jsonify({"error": "User has no assigned role!"}), 400
-            
-#             if role.name == 'Professional':
-#                 professional = Professional.query.filter_by(user_id=user.id).first()
-#                 if not professional:
-#                     return jsonify({'message': 'Professional profile not found', 'redirect_url': url_for('register_pdb')}), 404
-#                 if professional.is_flagged:
-#                     return jsonify({'message': 'Professional is flagged', 'redirect_url': url_for('flag_prof', professional_id=professional.id)}), 403
-#                 if professional.is_verified:
-#                     return jsonify({'message': 'Professional login successful', 'redirect_url': url_for('prof_db', username=professional.user.username)}), 200
-#                 else:
-#                     return jsonify({
-#                     "message": "Login successful!",
-#                     "professional": {
-#                         "id": professional.user_id,
-#                         "name": professional.name,
-#                         "email": professional.email,
-#                         "role": "Professional"  # Directly access the first role
-
-#                     },
-#                     "authentication_token": user.get_auth_token()  # Generate and return token
-#                 }), 200
-
-#             elif role.name == 'Customer':
-#                 customer = Customer.query.filter_by(user_id=user.id).first()
-#                 if customer:
-#                     if customer.is_blocked:
-#                         return jsonify({'message': 'Account is blocked'}), 403
-#                     return jsonify({
-#                     "message": "Login successful!",
-#                     "customer": {
-#                         "id": customer.user_id,
-#                         "name": customer.name,
-#                         "email": customer.email,
-#                         "role": "Customer",
-#                         "is_blocked": customer.is_blocked # Directly access the first role
-
-#                     },
-#                     "authentication_token": user.get_auth_token()  # Generate and return token
-#                 }), 200
-
-                
-            
-                    
-                    # return jsonify({'message': 'Customer login successful', 'redirect_url':url_for('cust_db', user_id=customer.user_id)}), 200
-        #         else:
-        #             return jsonify({'message': 'Customer profile not found', 'redirect_url': url_for('register_cdb')}), 404
-        #     elif role.name == 'Admin':
-        #         admin = Admin.query.filter_by(user_id=user.id).first()
-        #         return jsonify({
-        #             "message": "Login successful!",
-        #             "admin": {
-        #                 "id": admin.user_id,
-        #                 "name": admin.name,
-        #                 "role": "Admin"  # Directly access the first role
-
-        #             },
-        #             "authentication_token": user.get_auth_token()  # Generate and return token
-        #         }), 200
-        # else:
-        #         return jsonify({
-        #             "message": "Login successful!",'redirect_url': url_for('home'),
-        #             "user": {
-        #                 "id": user.id,
-        #                 "username": user.username,
-        #                 "email": user.email,
-        #                 "role": user.roles[0].name  # Directly access the first role
-
-        #             },
-        #             "authentication_token": user.get_auth_token()  # Generate and return token
-        #         }), 200
 @app.route('/api/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
@@ -319,54 +160,6 @@ def login():
         
 
 
-# @app.route('/register', methods=['GET', 'POST'])
-# def register():
-#     if request.method == 'GET':
-#         # Render the registration page
-#         if current_user.is_authenticated:
-#             flash("You are already registered and logged in.", "info")
-#             return  ' # Replace dashboard with your desired route'
-#         return render_template('register.html')
-
-#     elif request.method == 'POST':
-#         # Handle registration form submission
-#         email = request.form.get('email')
-#         username = request.form.get('username')
-#         password = request.form.get('password')
-#         confirm_password = request.form.get('confirm_password')
-#         role_name = request.form.get('role')  # Optional: if assigning roles
-
-#         # Validate the form data
-#         if not email or not username or not password or not confirm_password:
-#             flash("All fields are required.", "danger")
-#             return render_template('register.html')
-
-#         if password != confirm_password:
-#             flash("Passwords do not match.", "danger")
-#             return render_template ('register.html')
-
-#         # Check if the email is already registered
-#         if User.query.filter_by(email=email).first():
-#             flash("Email already registered. Please log in.", "danger")
-#             return render_template ('register.html')
-
-        
-#         # Hash the password and create a new user
-#         password_hash = generate_password_hash(password)
-#         user = User(email=email, username=username, password=password_hash, active=True)
-
-#         # Assign a role to the user if roles exist
-#         if role_name:
-#             role = Role.query.filter_by(name=role_name).first()
-#             if role:
-#                 user.roles.append(role)
-
-#         # Add and commit the new user to the database
-#         db.session.add(user)
-#         db.session.commit()
-
-#         flash("Registration successful! Please log in.", "success")
-#         return render_template('login.html')
 
 
 
@@ -509,29 +302,7 @@ def debug_roles():
     return {"roles": [role.name for role in current_user.roles]}
 
 
-# @app.route('/home')
-# @login_required
-# def home():
-#     user = User.query.get(session['user_id'])
-#     session['user_id']= user.id
-#     #check role of user and redirect to respective page
-#     role = Role.query.get (user.role_id)
-#     #check code at admin.txt
-#     if role.name =='Admin':
-#         admin = Admin.query.filter_by(user_id=user.id).first()
-#         if admin:
-#             return redirect(url_for('admin_db', username=admin.user.username))
-        
-#     if role.name == 'Professional':
-#         professional = Professional.query.filter_by(user_id=user.id).first()
-#         if professional:
-#             return redirect(url_for('prof_db', username=professional.users.username))
-#     if role.name == 'Customer':
-#         customer = Customer.query.filter_by(user_id=user.id).first()
-#         if customer:
-#             return redirect(url_for('cust_db', username=customer.users.username))
-
-# 
+ 
 @app.route('/home')
 @login_required
 @roles_accepted('Professional', 'Customer')
@@ -551,217 +322,6 @@ def home():
     return jsonify({"message": "Welcome to Home Page!"})
 
 # #--1. registering a user-----------------------------------
-# @app.route('/register')
-# def register():
-#     # role = Role.query.all()
-#     role= Role.query.filter(Role.name.in_(['Professional', 'Customer'])).all()
-    
-#     return render_template('register.html', role=role)
-
-# @app.route('/register', methods=['POST'])
-# def register_post():
-#     username = request.form['username']
-#     password = request.form['password']
-#     confirm_password = request.form['confirm_password']
-#     role_id = int(request.form['role_id'])
-    
-    
-#     if not username or not password or not confirm_password:
-#         flash('Please enter all the fields')
-#         return redirect(url_for('register'))
-    
-#     if password != confirm_password:
-#         flash('Passwords do not match')
-#         return redirect(url_for('register'))
-    
-#     user = User.query.filter_by(username=username).first()
-#     if user:
-#         flash ('Username already exists')
-#         return redirect(url_for('register'))
-    
-    
-      
-#     password_hash = generate_password_hash(password)
-    
-#     new_user= User(username=username, passhash=password_hash,  role_id=role_id)
-
-#     db.session.add(new_user)
-#     db.session.commit()
-
-#     flash('User registered successfully')
-#     return redirect(url_for('login'))
-# #---2. login of all users and redirection to respective/ profile update or dashboard-----------------------------------
-
-# @app.route('/login')
-# def login():
-#     return render_template('login.html')
-
-
-    # user = User.query.filter_by(username=username).first()
-#     if not username or not password:
-#         flash("please enter all the fields")
-#         return redirect(url_for('login'))
-    
-#     user = User.query.filter_by(username=username).first()
-#     if not user:
-#         flash('You are not registered, Register ^ to login')
-#         return redirect(url_for('login'))
-    
-    
-#     if not check_password_hash(user.passhash, password):
-#         flash('Incorrect password')
-#         return redirect(url_for('login'))
-    
-#     session['user_id']= user.id
-   
-#     flash('you have logged in successfully')
-#     #check role of user and redirect to respective page
-#     role = Role.query.get (user.role_id)
-#     #check code at admin.txt
-#     if role.name =='Admin':
-#         admin = Admin.query.filter_by(user_id=user.id).first()
-#         if admin:
-            
-#             return redirect(url_for('admin_db', username=admin.user.username))
-            
-#         else:
-#             return redirect(url_for('register_adb'))
- 
-#     elif role.name == 'Professional':
-#         professional = Professional.query.filter_by(user_id=user.id).first()
-#         print(professional)
-#         print(professional)
-#         print(professional)
-
-
-#         if not professional:
-#             return redirect(url_for('register_pdb'))
-#         if professional.is_flagged:
-#                 professional = Professional.query.filter_by(user_id=user.id).first()
-#                 return render_template('flag_prof.html', professional=professional)
-
-#         if professional and professional.is_verified:
-#             print(professional,'hi')
-            
-#             #return ('already registered professional page')
-#             return redirect(url_for('prof_db', username=professional.users.username))
-#         if professional and not professional.is_verified:
-#             professional = Professional.query.filter_by(user_id=user.id).first()
-#             return render_template('verify_prof.html',professional=professional)
-            
-        
-        
-#     elif role.name == 'Customer':
-#         customer = Customer.query.filter_by(user_id=user.id).first()
-#         if customer:
-#             if customer.is_blocked:
-#                 return render_template('block_cust.html', customer=customer)
-#             return redirect(url_for('cust_db', username=customer.users.username))
-#         else:
-#             return redirect(url_for('register_cdb'))
-#     else:
-#         #return redirect(url_for('home'))
-#         return redirect(url_for('login'))
-    
-# #---2a admin registration-----------------------------------
-# @app.route('/register_adb')
-# def register_adb():
-#     return render_template('register_adb.html')
-
-# @app.route('/register_adb', methods=['POST'])
-# def register_adb_post():
-    
-#     user = User.query.get(session['user_id'])
-#     admin = Admin.query.filter_by(user_id=user.id).first()
-#     if admin:
-#         #return ('already registered admin page' )
-#         return redirect(url_for('admin_db', username=admin.user.username))
-#         #return redirect(url_for('admin_db', name=admin.user.name))
-#     name = request.form['name']
-    
-    
-#     if not name:
-#         flash('Please enter all the fields')
-#         return redirect(url_for('register_adb'))
-    
-#     new_admin = Admin(user_id=user.id, name=name)
-#     db.session.add(new_admin)
-#     db.session.commit()
-    
-#     #Check if admin-specific details are already provided\    
-#     flash('Admin registered successfully')
-#     return redirect(url_for('admin_db'))
-    
-# #---2a proffessional registration-----------------------------------
-# @app.route('/register_pdb')
-# def register_pdb():
-#     categories=Category.query.all()
-#     print(categories)
-#     return render_template('register_pdb.html',categories=categories)
-
-# @app.route('/register_pdb', methods=['POST'])
-# def register_pdb_post():
-    
-#     # professional= Professional.query.filter_by(user_id=user.id).first()
-
-#     # if professional:
-#     #     #return ('already registered professional page' )
-#     #     return redirect(url_for('prof_db', name=professional.users.username))
-    
-#     email = request.form['email']
-#     name = request.form['name']
-#     #username = request.form['username']
-#     contact = request.form['contact']
-#     service_type = request.form['service_type']
-#     experience = request.form['experience']
-#     location = request.form['location']
-    
-#     #file upload 
-#     if 'file' in request.files:
-#         file = request.files['file']
-#         if file.filename == '':
-#             flash('No selected file')
-#             return redirect(request.url)
-#         if file and allowed_file(file.filename):
-#             filename = secure_filename(file.filename)
-#             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-#             flash('File uploaded successfully!')
-
-#    #password    = request.form['password']
-#     if not email or not name or not contact or not service_type or not experience:
-#         flash('Please enter all the fields')
-#         return redirect(url_for('register_pdb'))
-
-#     user = User.query.get(session['user_id'])
-  
-#     new_professional = Professional(user_id=user.id, email=email, name=name, contact=contact, service_type=service_type, experience=experience, location=location, filename=filename)   
-#     db.session.add(new_professional)
-#     db.session.commit()
-
-    
-#     #Check if professional-specific details are already provided  
-#     flash('professional registered successfully')
-#     # return redirect(url_for('prof_db'))
-#     professional = Professional.query.filter_by(user_id=user.id).first()
-#     print(professional)
-#     print(professional)
-#     print(professional)
-
-
-#     if not professional:
-#         return redirect(url_for('register_pdb'))
-#     if professional.is_flagged:
-#             professional = Professional.query.filter_by(user_id=user.id).first()
-#             return render_template('flag_prof.html', professional=professional)
-
-#     if professional and professional.is_verified:
-#         print(professional,'hi')
-        
-#         #return ('already registered professional page')
-#         return redirect(url_for('prof_db', username=professional.users.username))
-#     if professional and not professional.is_verified:
-#         professional = Professional.query.filter_by(user_id=user.id).first()
-#         return render_template('verify_prof.html',professional=professional)
 
 @app.route('/api/register_professional', methods=['POST'])
 def register_professional():
@@ -1848,56 +1408,6 @@ def get_catalogue():
     return jsonify({"categories": categories_data}), 200
 
 
-# @app.route('/add_to_schedule/<int:service_id>', methods=['POST'])
-# @login_required
-# def add_to_schedule(service_id):
-#     service = Service.query.get(service_id)
-#     if not service:
-#         flash('Service does not exist')
-#         return redirect(url_for('catalogue'))
-    
-#     location = request.form.get('location')
-#     if not location:
-#         flash('Please enter location')
-#         return redirect(url_for('catalogue'))
-    
-#     schedule_datetime_str = request.form.get('schedule_datetime')
-#     try:
-#         schedule_datetime = datetime.strptime(schedule_datetime_str, '%Y-%m-%dT%H:%M')
-#     except ValueError:
-#         flash('Invalid date format')
-#         return redirect(url_for('catalogue'))
-    
-#     if schedule_datetime < datetime.now():
-#         flash('Date & booking cannot be in the past')
-#         return redirect(url_for('catalogue'))
-    
-#     schedule = Schedule.query.filter_by(service_id=service_id,schedule_datetime=schedule_datetime).first()
-#     if schedule:
-#         flash('Service already added to schedule')
-#         return redirect(url_for('catalogue'))
-#     else:
-#         schedule = Schedule(
-#             customer_id=session['user_id'], 
-#             service_id=service_id, 
-#             schedule_datetime=schedule_datetime, 
-#             location=location,
-#             is_pending=True,
-#             is_active=True,
-#             is_accepted=False,
-#             is_cancelled=False,
-#             is_completed=False
-#         )
-            
-       
-
-#         db.session.add(schedule)
-#     db.session.commit()
-     
-#     flash('Service added to schedule successfully')
-#     return redirect(url_for('schedule'))
-
-
 @app.route('/add_to_schedule/<int:service_id>', methods=['POST'])
 @login_required
 def add_to_schedule(service_id):
@@ -1987,33 +1497,7 @@ def get_schedules():
         for schedule in schedules
     ]
     return jsonify(schedules_data), 200
-# @app.route('/schedule')
-# @login_required
-# def schedule():
-#     user = User.query.get(session['user_id'])
-#     role_id = user.role_id
-#     if role_id == 2:
-#         professional = Professional.query.filter_by(user_id=session['user_id']).first()
 
-#         if not professional:
-#             flash('Professional does not exist')
-#             return redirect(url_for('login'))
-    
-#         schedules = Schedule.query.join(Service).join(Category).filter(Category.name == professional.service_type).all()
-#         return render_template('view_appointments.html', schedules=schedules)
-    
-#     elif role_id == 3:
-#             customer = Customer.query.filter_by(user_id=session['user_id']).first()
-
-#             if not customer:
-#                 flash('Customer does not exist')
-#                 return redirect(url_for('login'))
-#             schedules = Schedule.query.filter_by(customer_id=session['user_id']).all()
-#             schedules = Schedule.query.filter_by(customer_id=session['user_id']).all()
-#             return render_template('schedule.html', schedules=schedules)
-#     else:
-#         flash('You are not authorized to access this page')
-#         return redirect(url_for('home'))
 @app.route('/api/schedule/<int:service_id>', methods=['POST'])
 @login_required
 def schedule_service(service_id):
@@ -2051,41 +1535,7 @@ def schedule_service(service_id):
     db.session.commit()
 
     return jsonify({'message': 'Service scheduled successfully'}), 201
-# @app.route('/schedule/<int:id>/edit')
-# @login_required
-# def edit_schedule(id):
-    
-#     schedule = Schedule.query.get(id)
-#     return render_template('schedule_edit.html', schedule=schedule)
 
-# @app.route('/schedule/<int:id>/edit', methods=['POST'])
-# @login_required
-# def edit_schedule_post(id):
-#     schedule = Schedule.query.get(id)
-#     if not schedule:
-#         flash('schedule not found')
-#         return  render_template(schedule.html)
-#     print(schedule)
-#     edit_sch = request.form.get('schedule_datetime')
-#     print(schedule.schedule_datetime)
-#     schedule_datetime_str = request.form.get('schedule_datetime')
-#     try:
-#         schedule_datetime = datetime.strptime(schedule_datetime_str, '%Y-%m-%dT%H:%M')
-#     except ValueError:
-#         flash('Invalid date format')
-#         return redirect(url_for('catalogue'))
-    
-#     if schedule_datetime < datetime.now():
-#         flash('Date & booking cannot be in the past')
-#         return redirect(url_for('catalogue'))
-#     schedule_datetime_obj = datetime.fromisoformat( edit_sch)
-#     schedule.schedule_datetime = schedule_datetime_obj
-    
-    
-#     db.session.commit()
-#     flash('schedule updated')
-#     schedules = Schedule.query.filter_by(customer_id=session['user_id']).all()
-#     return render_template('schedule.html',schedule=schedule,schedules=schedules)
 @app.route('/api/schedule/edit/<int:id>', methods=['PUT'])
 @login_required
 def edit_schedule(id):
@@ -2109,40 +1559,6 @@ def edit_schedule(id):
 
         
         
-
-# @app.route('/schedule/<int:id>/delete', methods=['POST'])   
-# @login_required
-# def delete_schedule(id):
-#     user = User.query.get(session['user_id'])
-#     role_id = user.role_id
-#     if role_id != 3:
-#         flash('You are not authorized to access this page')
-#         return redirect(url_for('home'))
-    
-#     schedule = Schedule.query.get(id)        
-#     if schedule.customer_id != session['user_id']:
-#         flash('You do not have permission to delete this schedule')
-#         return redirect(url_for('schedule'))
-#     if schedule.customer_id != session['user_id']:
-#         flash('You do not have permission to delete this schedule')
-#         return redirect(url_for('schedule'))
-#     if schedule.is_accepted:
-#         flash('You cannot delete an accepted schedule')
-#         return redirect(url_for('schedule'))
-#     if schedule.is_cancelled:
-#         flash('Schedule already cancelled')
-#         return redirect(url_for('schedule'))
-#     if schedule.is_completed:
-#         flash('Schedule already completed')
-#         return redirect(url_for('schedule'))
-#     schedule.is_active = False
-#     schedule.is_cancelled = True
-    
-    
-#     db.session.delete(schedule)
-#     db.session.commit()
-#     flash('Schedule deleted successfully, Create new one')
-#     return redirect(url_for('schedule'))
 @app.route('/api/schedule/delete/<int:id>', methods=['DELETE'])
 @login_required
 def delete_schedule(id):
@@ -2168,43 +1584,6 @@ def delete_schedule(id):
     return jsonify({'message': 'Schedule deleted successfully'}), 200
     
 
-# @app.route('/schedule/<int:id>/confirm', methods=['POST'])
-# @login_required
-# def confirm(id):
-#     user = User.query.get(session['user_id'])
-#     role_id = user.role_id
-
-#     if role_id == 2:
-#         professional = Professional.query.filter_by(user_id=session['user_id']).first()
-#         if not professional:
-#             flash('Professional does not exist')
-#             return redirect(url_for('login'))
-        
-#         schedule = Schedule.query.get(id)
-#         if not schedule or schedule.is_accepted:
-#             # flash('No pending schedule to accept')
-#             return redirect(url_for('pending_booking'))
-        
-#         transaction = Transaction(customer_id=schedule.customer_id, professional_id=professional.id, amount=0, datetime=datetime.now(), status='Accepted')
-#         service = Service.query.get(schedule.service_id)
-#         transaction.amount += float(service.price)
-
-#         booking = Booking(
-#             transaction=transaction,
-#             service=schedule.service,
-#             location=schedule.location,
-#             date_of_completion=schedule.schedule_datetime.date(),
-#             rating=None,
-#             remarks=None
-#         )
-#         db.session.add(booking)
-#         db.session.delete(schedule)
-#         db.session.add(transaction)
-#         db.session.commit()
-
-#         flash('Schedule accepted successfully')
-#         # return redirect(url_for('pending_booking'))
-#         return render_template('prof_booking.html',transactions=Transaction.query.filter_by(professional_id=professional.id).all())
 
 @app.route('/api/schedule/<int:id>/confirm', methods=['POST'])
 def confirm_schedule(id):
@@ -2264,40 +1643,7 @@ def confirm_schedule(id):
         "transaction_id": transaction.id
     }), 200
 
-# @app.route('/bookings')
-# @login_required
-# def bookings():
-#     user = User.query.get(session['user_id'])
-#     role_id = user.role_id
 
-#     if role_id == 3:  # Customer
-#         cust_transactions = Transaction.query.filter_by(customer_id=session['user_id']).order_by(Transaction.datetime.desc()).all()
-#         return render_template('cust_bookings.html', transactions=cust_transactions)
-#     elif role_id == 2:  # Professional
-#         professional = Professional.query.filter_by(user_id=session['user_id']).first()
-#         if not professional:
-#             flash('Professional does not exist')
-#             return redirect(url_for('login'))
-        
-#         prof_transactions = Transaction.query.filter_by(professional_id=professional.id).order_by(Transaction.datetime.desc()).all()
-#         print(prof_transactions)
-#         return render_template('prof_booking.html', transactions=prof_transactions)
-#     elif role_id == 1:  # Admin
-#         transactions = Transaction.query.all()
-#         users = User.query.all()
-#         schedules = Schedule.query.all()    
-#         transactions = Transaction.query.all()
-#         bookings = Booking.query.all()
-#         customers = Customer.query.all()
-#         professionals = Professional.query.all()
-#         pending_professionals = Professional.query.filter_by(is_verified=False,is_flagged=False).all()
-#         blocked_professionals = Professional.query.filter_by(is_flagged=True).all()
-    
-#         return render_template('admin_booking.html', bookings=bookings, schedules=schedules, transactions=transactions, customers=customers, professionals=professionals,users=users, pending_professionals=pending_professionals, blocked_professionals=blocked_professionals)
-#     else:
-#         flash('You are not authorized to access this page')
-#         return redirect(url_for('home')) 
-# from flask import Flask, jsonify, session
 @app.route('/api/bookings', methods=['GET'])
 # @cache.cached(timeout=300, key_prefix="transactions_cache") 
 @login_required
@@ -2562,114 +1908,9 @@ def api_rate_booking(id):
 
 
 
-# @app.route('/booking/<int:id>/delete', methods=['POST'])
-# @login_required
-# def delete_booking(id):
-#     user = User.query.get(session['user_id'])
-#     role_id = user.role_id
-#     if role_id != 3:
-#         flash('You are not authorized to access this page')
-#         return redirect(url_for('home'))
-#     booking = Booking.query.get(id)
-#     if booking.transaction.customer_id != session['user_id']:
-#         flash('You do not have permission to delete this booking')
-#         return redirect(url_for('bookings'))
-#     if booking.transaction.status == 'Accepted':
-#         flash('You cannot delete an accepted booking')
-#         return redirect(url_for('bookings'))
-#     if booking.transaction.status == 'Cancelled':
-#         flash('Booking already cancelled')
-#         return redirect(url_for('bookings'))
-#     if booking.transaction.status == 'Completed':
-#         flash('Booking already completed')
-#         return redirect(url_for('bookings'))
-#     booking.transaction.status = 'Cancelled'
-#     db.session.commit()
-
-#     flash('Booking cancelled successfully')
-#     return redirect(url_for('bookings'))
-
-
-
-# @app.route('/booking/<int:id>/complete', methods=['POST'])
-# @login_required
-# def complete_booking(id):
-#     user = User.query.get(session['user_id'])
-#     role_id = user.role_id
-#     if role_id != 3:
-#         flash('You are not authorized to access this page')
-#         return redirect(url_for('home'))
-#     booking = Booking.query.get(id)
-#     if booking.transaction.customer_id != session['user_id']:
-#         flash('You do not have permission to complete this booking')
-#         return redirect(url_for('bookings'))
-    
-#     if booking.transaction.status == 'Cancelled':
-#         flash('Booking already cancelled')
-#         return redirect(url_for('bookings'))
-#     if booking.transaction.status == 'Completed':
-#         flash('Booking already completed')
-#         return redirect(url_for('bookings'))
-    
-#     booking.transaction.date_of_completion = datetime.now()
-#     booking.transaction.status = 'Completed'
-#     db.session.commit()
-
-#     flash('Booking completed successfully')
-    
-#     return redirect(url_for('bookings'))
-
-
-
-
-# @app.route('/booking/<int:id>/rate', methods=['POST'])
-# @login_required
-# def rate_booking(id):
-#     user = User.query.get(session['user_id'])
-#     role_id = user.role_id
-#     if role_id != 3:
-#         flash('You are not authorized to access this page')
-#         return redirect(url_for('home'))
-#     booking = Booking.query.get(id)
-#     transaction = Transaction.query.get(booking.transaction_id)
-#     print(booking)
-#     print(transaction)
-#     if transaction.customer_id != session['user_id']:
-#         flash('You do not have permission to rate this booking')
-#         return redirect(url_for('bookings'))
-#     if transaction.status != 'Completed':
-#         flash('You cannot rate a booking that is not completed')
-#         return redirect(url_for('bookings'))
-#     rating = request.form.get('rating')
-#     remarks = request.form.get('remarks')
-#     if not rating or not remarks:
-#         flash('Please fill out the fields')
-#         return redirect(url_for('bookings'))
-#     rating = int(rating)
-#     print(rating, type(rating), remarks)
-   
-#     booking.rating = rating
-#     booking.remarks = remarks
-#     db.session.commit()
-#     flash('Booking rated successfully')
-#     return redirect(url_for('bookings'))
-
-
 
 # #-----------------professional pages-----------------------------------
-    
-# # ----booking request to professional-------------------   
-# @app.route('/pending_booking')
-# @login_required
-# def pending_booking():
-#     professional = Professional.query.filter_by(user_id=session['user_id']).first()
 
-#     if not professional:
-#         flash('Professional does not exist')
-#         return redirect(url_for('login'))
-    
-#     schedules = Schedule.query.join(Service).join(Category).filter(Category.name == professional.service_type).all()
-#     return render_template('view_appointments.html', schedules=schedules)
 # GET REQUESTED SCHEDULES
 
 @app.route('/api/pending_booking', methods=['GET'])
@@ -2706,31 +1947,7 @@ def api_pending_booking():
     return jsonify({'pending_booking': result}), 200
 
 
-# # route for accept appointment
-# @app.route('/accept_appointment/<int:id>', methods=['POST'])
-# @login_required
-# def accept_appointment(id):
-#     schedule = Schedule.query.get(id)
-#     if not schedule:
-#         flash('Schedule does not exist')
-#         return redirect(url_for('pending_booking'))
-#     if schedule.is_accepted:
-#         flash('Schedule already accepted')
-#         return redirect(url_for('pending_booking'))
-#     if schedule.is_cancelled:
-#         flash('Schedule already cancelled')
-#         return redirect(url_for('pending_booking'))
-#     if schedule.is_completed:
-#         flash('Schedule already completed')
-#         return redirect(url_for('pending_booking'))
-#     schedule.professional_id = Professional.query.filter_by(user_id=session['user_id']).first().id
-#     schedule.is_accepted = True
-#     schedule.is_pending = False
 
-#     db.session.commit()
-#     db.session.delete(schedule)
-#     #delete from prof table
-#     flash('Schedule accepted successfully')
 @app.route('/api/accept_appointment/<int:id>', methods=['POST']) 
 @login_required
 def api_accept_appointment(id):
@@ -2772,19 +1989,6 @@ def api_accept_appointment(id):
 
 
 # # ----------------admin page route to fetch all bookings by customers-------------------
-# @app.route('/admin/bookings')
-# @roles_required('admin')
-# def admin_bookings():
-#     users = User.query.all()
-#     schedules = Schedule.query.all()
-    
-#     transactions = Transaction.query.all()
-    
-#     bookings = Booking.query.all()
-#     customers = Customer.query.all()
-#     professionals = Professional.query.all()
-    
-#     return render_template('admin_booking.html', bookings=bookings, schedules=schedules, transactions=transactions, customers=customers, professionals=professionals,users=users)
 
 
 @app.route('/api/admin/bookings', methods=['GET'])
@@ -2883,18 +2087,4 @@ def admin_bookings():
     }
 
     return jsonify(data), 200
-# @app.route('/prof/rating')
-# @login_required
-# def prof_byrating():
-#     users = User.query.all()
-#     schedules = Schedule.query.all()
-    
-#     transactions = Transaction.query.all()
-    
-#     bookings = Booking.query.all()
-#     customers = Customer.query.all()
-#     professionals = Professional.query.all()
-    
-   
-#     return render_template('prof_byrating.html' , bookings=bookings, schedules=schedules, transactions=transactions, customers=customers, professionals=professionals,users=users)
 
