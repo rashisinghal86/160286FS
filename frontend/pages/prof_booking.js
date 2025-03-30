@@ -2,13 +2,18 @@ export default {
     template: `
     <div>
         <h2 class="display-1">Professional Bookings</h2>
+        <button class="btn btn-primary" @click="printPage" style="float: right;">
+            <i class="fas fa-print" aria-hidden="true"></i>  
+            Print
+        </button>
+        <br>
         <hr>
         <div v-if="transactions.length > 0">
-            <div v-for="transaction in transactions" :key="transaction.id" class="heading">
-                <h2 class="text-muted">Transaction # {{ transaction.id }}</h2>
-                <p class="datetime">{{ formatDate(transaction.datetime) }}</p>
-                <pre>{{ transactions }}</pre>
-
+            <div v-for="transaction in transactions" :key="transaction.id">
+                <div class="heading">
+                  <h2 class="text-muted">Transaction # {{ transaction.id }}</h2>
+                  <p class="datetime">{{ formatDate(transaction.datetime) }}</p>
+                </div>
                 <div class="bookings">
                     <table class="table">
                         <thead>
@@ -24,11 +29,11 @@ export default {
                         <tbody>
                             <tr v-for="booking in transaction.bookings" :key="booking.id">
                                 <td>{{ booking.id }}</td>
-                                <td>{{ booking.service.name }}</td>
-                                <td>{{ booking.date_of_completion }}</td>
+                                <td>{{ booking.service_name }}</td>
+                                <td>{{ formatDate(booking.date_of_completion) }}</td>
                                 <td>{{ booking.location }}</td>
-                                <td>{{ booking.transaction.amount }}</td>
-                                <td>{{ booking.transaction.status }}</td>
+                                <td>{{ transaction.amount }}</td>
+                                <td>{{ transaction.status }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -36,46 +41,49 @@ export default {
             </div>
         </div>
         <div v-else class="alert alert-info">
-            <strong>Info!</strong> No Appointments found
+            <strong>Info!</strong> No bookings found
         </div>
     </div>
     `,
     data() {
         return {
-            transactions: []
+            transactions: [] // Holds the transactions fetched from the backend
         };
     },
     methods: {
         async fetchBookings() {
             try {
-                const response = await fetch("/api/bookings");
-                if (!response.ok) throw new Error("Failed to fetch bookings");
-        
-                const data = await response.json();
-                console.log("API Response:", data);
-        
-                // Ensure transactions exist before assigning
-                if (data.transactions) {
-                    console.log("Transactions found:", data.transactions);
-                    this.transactions = data.transactions;
+                const response = await fetch("/api/prof/transactions", {
+                    method: "GET",
+                    headers: { "Content-Type": "application/json" }
+                });
+  
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("API Response:", data); // Debugging
+                    if (data.transactions && data.transactions.length > 0) {
+                        this.transactions = data.transactions;
+                    } else {
+                        console.log("No transactions found in the response");
+                        this.transactions = [];
+                    }
                 } else {
-                    console.log("No transactions found in the response");
-                    this.transactions = [];
+                    const errorData = await response.json();
+                    console.error("Failed to fetch bookings:", errorData.error || "Unknown error");
                 }
-                console.log("Transactions after assignment:", this.transactions);
             } catch (error) {
                 console.error("Error fetching bookings:", error);
             }
         },
-         printPage() {
+        printPage() {
             window.print();
         },
         formatDate(date) {
-            return new Date(date).toLocaleString();
-            }
-    },        
-
+            return date ? new Date(date).toLocaleString() : "N/A";
+        }
+    },
     mounted() {
         this.fetchBookings();
     }
-}
+  };
+  

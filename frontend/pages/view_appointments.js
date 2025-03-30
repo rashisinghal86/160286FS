@@ -68,7 +68,7 @@ export default {
         
                 alert("Schedule confirmed successfully!");
                 this.fetchSchedules();
-                this.$router.push('/booking');  // Refresh data after confirmation
+                this.$router.push('/prof_booking');  // Refresh data after confirmation
             } catch (error) {
                 console.error("Error confirming schedule:", error);
                 alert(error.message);

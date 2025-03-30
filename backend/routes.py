@@ -1007,6 +1007,7 @@ def delete_user():
 
 
 @app.route('/api/profile', methods=['GET']) #not using this for now
+
 @login_required
 def profile():
     user = User.query.get(session.get('user_id'))
@@ -1867,6 +1868,42 @@ def api_bookings():
 
     else:
         return jsonify({'error': 'You are not authorized to access this page'}), 403
+
+
+from flask_login import current_user
+
+@app.route("/api/prof/transactions", methods=["GET"])
+def get_professional_transactions():
+    if not current_user.is_authenticated:
+        return jsonify({"error": "User not authenticated"}), 401
+
+    professional_id = current_user.id  # Assuming `id` is the field for the professional ID in your user model
+
+    transactions = Transaction.query.filter_by(professional_id=professional_id).all()
+
+    result = []
+    for transaction in transactions:
+        bookings = Booking.query.filter_by(transaction_id=transaction.id).all()
+        transaction_data = {
+            "id": transaction.id,
+            "amount": transaction.amount,
+            "datetime": transaction.datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "status": transaction.status,
+            "bookings": [
+                {
+                    "id": booking.id,
+                    "service_name": Service.query.get(booking.service_id).name,
+                    "date_of_completion": booking.date_of_completion.strftime("%Y-%m-%d"),
+                    "location": booking.location
+                } for booking in bookings
+            ]
+        }
+        result.append(transaction_data)
+
+    return jsonify({"transactions": result})
+
+
+
 
 
 @app.route('/api/booking/<int:id>/delete', methods=['POST'])

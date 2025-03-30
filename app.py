@@ -53,16 +53,17 @@ excel.init_excel(app)
 @celery.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(
-        crontab(minute = '*/120'),
+        crontab(minute = '*/2'),
         monthly_report.s(),
     )
 
 # @celery.on_after_finalize.connect
 # def setup_periodic_tasks(sender, **kwargs):
 #     sender.add_periodic_task(
-#         crontab(minute = '*/120'),
+#         crontab(minute = '*/2'),
 #         delivery_report.s(), #schedule the status of booking  to run every 2 hours
 #     )
 
 if __name__ == '__main__':
+
     app.run(debug=True)
