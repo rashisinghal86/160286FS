@@ -1,13 +1,15 @@
+import router from '../utils/router.js';  
+
 const store = new Vuex.Store({
-    state : {
-        // like data
-        auth_token : null,
-        role : null,
-        loggedIn : false,
-        user_id : null,
+    state: {
+        // State variables
+        auth_token: null,
+        role: null,
+        loggedIn: false,
+        user_id: null,
     },
-    mutations : {
-        // functions that change state
+    mutations: {
+        // Set user data in the state
         setUser(state) {
             try {
                 const user = JSON.parse(localStorage.getItem('user'));
@@ -15,8 +17,8 @@ const store = new Vuex.Store({
                     state.auth_token = user.authentication_token;
                     state.loggedIn = true;
                     state.user_id = user.admin?.id || user.customer?.id || user.professional?.id;
-        
-                    // Correctly extract role based on user type
+
+                    // Determine the user's role
                     if (user.admin) {
                         state.role = user.admin.role;
                     } else if (user.customer) {
@@ -28,26 +30,44 @@ const store = new Vuex.Store({
                     }
                 }
             } catch (error) {
-                console.warn('Not logged in');
+                console.warn('Not logged in:', error);
             }
-        }
-        ,
+        },
 
-        logout(state){
+        // Logout mutation
+        logout(state) {
+            // Clear local storage and Vuex state
+            localStorage.removeItem('user');
             state.auth_token = null;
             state.role = null;
             state.loggedIn = false;
             state.user_id = null;
 
-            localStorage.removeItem('user')
+            // Redirect to the login page
+            router.push('/homecss').catch(err => {
+                console.error('Router push error:', err);
+            });
         }
     },
-    actions : {
-        
-        
+    actions: {
+        // Logout action to handle async operations
+        async logout({ commit }) {
+            try {
+                const response = await fetch('/api/signout', { method: 'POST', credentials: 'include' });
+                if (response.ok) {
+                    console.log('Logout successful');
+                    commit('logout'); // Commit the logout mutation
+                } else {
+                    console.error('Failed to logout:', await response.json());
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
     }
-})
+});
 
-store.commit('setUser')
+// Initialize the user state on app load
+store.commit('setUser');
 
 export default store;

@@ -121,7 +121,7 @@ export default {
                 const response = await fetch('/api/delete/cust', { method: 'DELETE' });
                 if (response.ok) {
                     alert("Your account has been deleted.");
-                    window.location.href = '/home'; // Redirect to home page
+                    this.$router.push('/home');  // Redirect to home page
                 } else {
                     alert("Failed to delete account. Please try again.");
                 }

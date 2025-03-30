@@ -802,6 +802,7 @@ def signout():
         return jsonify({'error': 'User not logged in'}), 401
 
     logout_user()
+    session.clear()
     return jsonify({'message': 'Successfully signed out'}), 200
 
 @app.route('/api/admin/delete_professional/<int:id>', methods=['DELETE'])
