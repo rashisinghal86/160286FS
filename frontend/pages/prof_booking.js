@@ -1,11 +1,8 @@
 export default {
     template: `
-    <div>
+    <div class='container'>
         <h2 class="display-1">Professional Bookings</h2>
-        <button class="btn btn-primary" @click="printPage" style="float: right;">
-            <i class="fas fa-print" aria-hidden="true"></i>  
-            Print
-        </button>
+        
         <br>
         <hr>
         <div v-if="transactions.length > 0">
@@ -53,7 +50,7 @@ export default {
     methods: {
         async fetchBookings() {
             try {
-                const response = await fetch("/api/prof/transactions", {
+                const response = await fetch("/api/bookings", {
                     method: "GET",
                     headers: { "Content-Type": "application/json" }
                 });

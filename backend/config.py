@@ -36,10 +36,10 @@ class Config:
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or 'your_email@example.com'
 
     # Cache Configurations
-    # CACHE_DEFAULT_TIMEOUT = 300  # Cache timeout in 5 minutes
-    # # CACHE_REDIS_PORT = 6379
-    # CACHE_TYPE = "RedisCache"
-    # # CACHE_REDIS_HOST = "localhost"
-    # CACHE_REDIS_DB = 1
+    CACHE_DEFAULT_TIMEOUT = 300  # Cache timeout in 5 minutes
+    # CACHE_REDIS_PORT = 6379
+    CACHE_TYPE = "RedisCache"
+    # CACHE_REDIS_HOST = "localhost"
+    CACHE_REDIS_DB = 1
 
     

@@ -1549,7 +1549,7 @@ def schedule_service(service_id):
 
     data = request.get_json()
     datetime_str = data.get('datetime')
-    location = 'location'  # data.get('location')
+    location = data.get('location')
 
     try:
         schedule_datetime = datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M')
@@ -1651,7 +1651,7 @@ def confirm_schedule(id):
     # Create transaction
     transaction = Transaction(
         customer_id=schedule.customer_id,
-        professional_id=professional.id,
+        professional_id=professional.user_id,
         amount=0,  # Initial amount, will be updated below
         datetime=datetime.now(),
         status='Accepted'
